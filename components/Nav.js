@@ -6,6 +6,7 @@ const links = [
   { href: "/h2h", label: "H2H Cups" },
   { href: "/lms", label: "LMS" },
   { href: "/prizes", label: "Prizes" },
+  { href: "/rules", label: "Set Rules" },
   { href: "/admin", label: "Admin" },
 ];
 

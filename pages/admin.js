@@ -1,17 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Dialog from "../components/Dialog";
+import { validateGw, validateEntryId, validateRequired, validatePositiveNumber, validatePhone, firstError } from "../lib/validation";
 
-// Single gate: nothing on this page renders until the right password is
-// entered once. After that, every admin action (LMS, captaincy, H2H
-// knockout, registrations, AND finance) is available in this one view -
-// no second password, no separate /admin/finance route.
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [dialog, setDialog] = useState(null); // { type, title, message }
 
   const [gw, setGw] = useState("");
   const [captaincyGw, setCaptaincyGw] = useState("");
-  const [log, setLog] = useState([]);
 
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
@@ -19,6 +17,7 @@ export default function Admin() {
   const [regAmount, setRegAmount] = useState("");
   const [regCurrency, setRegCurrency] = useState("INR");
   const [regPaidTo, setRegPaidTo] = useState("");
+  const [registrations, setRegistrations] = useState([]);
 
   const [entryId, setEntryId] = useState("");
   const [entryName, setEntryName] = useState("");
@@ -42,33 +41,68 @@ export default function Admin() {
   const [amount, setAmount] = useState("");
   const [assignedAdmin, setAssignedAdmin] = useState("");
 
+  const [logs, setLogs] = useState([]);
+
+  const showError = (message) => setDialog({ type: "error", title: "Fix this before continuing", message });
+  const showSuccess = (message) => setDialog({ type: "success", title: "Saved", message });
+
   const unlock = async () => {
     setAuthError(null);
-    const res = await fetch(`/api/admin/finance?password=${encodeURIComponent(password)}`);
-    const d = await res.json();
-    if (d.error) {
-      setAuthError("Wrong password.");
-      return;
+    try {
+      const res = await fetch(`/api/admin/finance?password=${encodeURIComponent(password)}`);
+      const d = await res.json();
+      if (d.error) {
+        setAuthError("Wrong password. Try again.");
+        return;
+      }
+      setFinance(d);
+      if (d.pool) {
+        setTotalPlayers(d.pool.total_players || "");
+        setBuyinInr(d.pool.buyin_inr || "");
+        setBuyinUsd(d.pool.buyin_usd || "");
+        setAdminFeesInr(d.pool.admin_fees_inr || "");
+      }
+      setUnlocked(true);
+    } catch (e) {
+      setAuthError("Couldn't reach the server. Check your internet connection and try again.");
     }
-    setFinance(d);
-    if (d.pool) {
-      setTotalPlayers(d.pool.total_players || "");
-      setBuyinInr(d.pool.buyin_inr || "");
-      setBuyinUsd(d.pool.buyin_usd || "");
-      setAdminFeesInr(d.pool.admin_fees_inr || "");
-    }
-    setUnlocked(true);
   };
 
   const call = async (url, body) => {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, ...body }),
-    });
-    const data = await res.json();
-    setLog((l) => [{ time: new Date().toLocaleTimeString(), url, data }, ...l]);
-    return data;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ...body }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        showError(data.error);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      showError("Couldn't reach the server. Check your internet connection and try again.");
+      return null;
+    }
+  };
+
+  const loadRegistrations = async () => {
+    try {
+      const res = await fetch(`/api/admin/registrations-list?password=${encodeURIComponent(password)}`);
+      const d = await res.json();
+      if (!d.error) setRegistrations(d.registrations);
+    } catch (e) {
+      // Silent - the registrations card itself already shows "no entries" if this stays empty.
+    }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const res = await fetch(`/api/admin/logs?password=${encodeURIComponent(password)}`);
+      const d = await res.json();
+      if (!d.error) setLogs(d.logs);
+    } catch (e) {}
   };
 
   const reloadFinance = async () => {
@@ -77,16 +111,144 @@ export default function Admin() {
     if (!d.error) setFinance(d);
   };
 
+  useEffect(() => {
+    if (unlocked) {
+      loadRegistrations();
+      loadLogs();
+    }
+  }, [unlocked]);
+
+  const runLms = async () => {
+    const err = firstError([validateGw(gw)]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/lms-run", { gw });
+    if (result) {
+      showSuccess(result.status === "manual_action_required" ? result.message : `LMS elimination recorded for GW${gw}.`);
+      loadLogs();
+    }
+  };
+
+  const runCaptaincy = async () => {
+    const err = firstError([validateGw(captaincyGw)]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/captaincy-run", { gw: captaincyGw });
+    if (result) {
+      showSuccess(`Captain accuracy recorded for ${result.recorded} managers in GW${captaincyGw}.`);
+      loadLogs();
+    }
+  };
+
+  const saveKnockout = async () => {
+    const err = firstError([
+      validateGw(koGw),
+      validateEntryId(koEntry1, "Entry ID 1"),
+      validateEntryId(koEntry2, "Entry ID 2"),
+    ]);
+    if (err) return showError(err);
+    if (koEntry1 === koEntry2) return showError("Entry ID 1 and Entry ID 2 can't be the same team.");
+
+    const result = await call("/api/admin/h2h-knockout", {
+      cup: koCup, round: koRound, gw: koGw,
+      entryId1: Number(koEntry1), entryId2: Number(koEntry2),
+      score1: koScore1 ? Number(koScore1) : null,
+      score2: koScore2 ? Number(koScore2) : null,
+      winnerEntryId: koScore1 && koScore2 ? (Number(koScore1) > Number(koScore2) ? Number(koEntry1) : Number(koEntry2)) : null,
+    });
+    if (result) {
+      showSuccess("Knockout result saved.");
+      setKoGw(""); setKoEntry1(""); setKoEntry2(""); setKoScore1(""); setKoScore2("");
+      loadLogs();
+    }
+  };
+
+  const saveRegistration = async () => {
+    const err = firstError([
+      validateRequired(regName, "Manager name"),
+      validatePhone(regPhone),
+      validateRequired(regTeam, "FPL team name"),
+      validatePositiveNumber(regAmount, "Amount"),
+      validateRequired(regPaidTo, "Paid to"),
+    ]);
+    if (err) return showError(err);
+
+    const result = await call("/api/admin/registration", {
+      managerName: regName, phone: regPhone, fplTeamName: regTeam,
+      amount: Number(regAmount), currency: regCurrency, paidTo: regPaidTo, paid: true,
+    });
+    if (result) {
+      showSuccess(`Registration saved for ${regName} (${regTeam}).`);
+      setRegName(""); setRegPhone(""); setRegTeam(""); setRegAmount(""); setRegPaidTo("");
+      loadRegistrations();
+      loadLogs();
+    }
+  };
+
+  const saveRebuy = async () => {
+    const err = firstError([validateEntryId(entryId), validateRequired(entryName, "Team name")]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/rebuy", { entryId: Number(entryId), entryName, paid: true });
+    if (result) {
+      showSuccess(`Rebuy recorded for ${entryName}.`);
+      setEntryId(""); setEntryName("");
+      loadLogs();
+    }
+  };
+
+  const savePool = async () => {
+    const err = firstError([
+      validatePositiveNumber(totalPlayers, "Total players"),
+      validatePositiveNumber(buyinInr, "Buy-in INR"),
+    ]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/finance", {
+      action: "setPool", totalPlayers: Number(totalPlayers), buyinInr: Number(buyinInr),
+      buyinUsd: Number(buyinUsd) || 0, adminFeesInr: Number(adminFeesInr) || 0,
+    });
+    if (result) {
+      showSuccess("Prize pool settings saved.");
+      reloadFinance();
+    }
+  };
+
+  const savePayout = async () => {
+    const err = firstError([
+      validateRequired(prizeKey, "Prize key"),
+      validateRequired(prizeLabel, "Prize label"),
+      validateRequired(winnerName, "Winner name"),
+      validatePositiveNumber(amount, "Amount"),
+    ]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/finance", {
+      action: "upsertPayout", prizeKey, prizeLabel, winnerName, amount: Number(amount), assignedAdmin, paid: false,
+    });
+    if (result) {
+      showSuccess(`Payout entry saved for ${winnerName}.`);
+      setPrizeKey(""); setPrizeLabel(""); setWinnerName(""); setAmount(""); setAssignedAdmin("");
+      reloadFinance();
+    }
+  };
+
+  const markPayoutPaid = async (p) => {
+    const result = await call("/api/admin/finance", {
+      action: "upsertPayout", prizeKey: p.prize_key, prizeLabel: p.prize_label,
+      winnerEntryId: p.winner_entry_id, winnerName: p.winner_name,
+      amount: p.amount, currency: p.currency, assignedAdmin: p.assigned_admin, paid: true,
+    });
+    if (result) {
+      showSuccess(`Marked ${p.winner_name}'s payout as paid.`);
+      reloadFinance();
+    }
+  };
+
   if (!unlocked) {
     return (
       <div className="container">
+        <Dialog dialog={dialog} onClose={() => setDialog(null)} />
         <div className="card" style={{ maxWidth: 420, margin: "3rem auto", textAlign: "center" }}>
           <h1 style={{ fontSize: 20 }}>Admin</h1>
           <p className="muted">Enter the admin password to manage LMS, H2H, registrations, and finance.</p>
           <input
-            type="password"
-            placeholder="Admin password"
-            value={password}
+            type="password" placeholder="Admin password" value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && unlock()}
             style={{ width: "100%", marginBottom: 10 }}
@@ -103,28 +265,30 @@ export default function Admin() {
 
   return (
     <div className="container">
-      <div className="card">
-        <h1 style={{ fontSize: 20 }}>Admin</h1>
-        <p className="muted">Unlocked. Every action below is admin-only, including the finance section at the bottom.</p>
+      <Dialog dialog={dialog} onClose={() => setDialog(null)} />
+
+      <div className="hero">
+        <h1>Admin</h1>
+        <p>Every action below is validated before it's saved - bad input gets caught with a specific error, not silently accepted. Everything here, including finance, is behind this one password.</p>
       </div>
 
       <div className="card">
-        <h2>Run LMS Elimination</h2>
-        <p className="muted">Only run after a GW locks and bonus points settle.</p>
+        <h2>Run LMS elimination</h2>
+        <p className="muted">Only run after a GW locks and bonus points settle - GW must be 1-38.</p>
         <input placeholder="Gameweek number" value={gw} onChange={(e) => setGw(e.target.value)} style={{ width: 160 }} />
         {" "}
-        <button onClick={() => call("/api/admin/lms-run", { gw })}>Run elimination for this GW</button>
+        <button onClick={runLms}>Run elimination for this GW</button>
       </div>
 
       <div className="card">
-        <h2>Run Captain Accuracy Check (Perfect Captaincy)</h2>
+        <h2>Run captain accuracy check (Perfect Captaincy)</h2>
         <input placeholder="Gameweek number" value={captaincyGw} onChange={(e) => setCaptaincyGw(e.target.value)} style={{ width: 160 }} />
         {" "}
-        <button onClick={() => call("/api/admin/captaincy-run", { gw: captaincyGw })}>Run for this GW</button>
+        <button onClick={runCaptaincy}>Run for this GW</button>
       </div>
 
       <div className="card">
-        <h2>Record H2H Knockout Result</h2>
+        <h2>Record H2H knockout result</h2>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
           <select value={koCup} onChange={(e) => setKoCup(e.target.value)}>
             <option value="gold">Gold Cup</option>
@@ -144,23 +308,11 @@ export default function Admin() {
           <input placeholder="Entry ID 2" value={koEntry2} onChange={(e) => setKoEntry2(e.target.value)} style={{ width: 120 }} />
           <input placeholder="Score 2" value={koScore2} onChange={(e) => setKoScore2(e.target.value)} style={{ width: 90 }} />
         </div>
-        <button
-          onClick={() =>
-            call("/api/admin/h2h-knockout", {
-              cup: koCup, round: koRound, gw: koGw,
-              entryId1: Number(koEntry1), entryId2: Number(koEntry2),
-              score1: koScore1 ? Number(koScore1) : null,
-              score2: koScore2 ? Number(koScore2) : null,
-              winnerEntryId: koScore1 && koScore2 ? (Number(koScore1) > Number(koScore2) ? Number(koEntry1) : Number(koEntry2)) : null,
-            })
-          }
-        >
-          Save result
-        </button>
+        <button onClick={saveKnockout}>Save result</button>
       </div>
 
       <div className="card">
-        <h2>Add Registration</h2>
+        <h2>Add registration</h2>
         <p className="muted">Contains phone numbers - visible only here, behind this password.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
           <input placeholder="Manager name" value={regName} onChange={(e) => setRegName(e.target.value)} />
@@ -175,28 +327,38 @@ export default function Admin() {
           </select>
           <input placeholder="Paid to (admin name)" value={regPaidTo} onChange={(e) => setRegPaidTo(e.target.value)} />
         </div>
-        <button
-          onClick={() =>
-            call("/api/admin/registration", {
-              managerName: regName, phone: regPhone, fplTeamName: regTeam,
-              amount: regAmount ? Number(regAmount) : null, currency: regCurrency,
-              paidTo: regPaidTo, paid: true,
-            })
-          }
-        >
-          Save registration (marks as paid)
-        </button>
+        <button onClick={saveRegistration}>Save registration</button>
+
+        <div style={{ marginTop: 18, borderTop: "0.5px solid var(--border)", paddingTop: 14 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>All registrations ({registrations.length})</p>
+          {registrations.length === 0 ? (
+            <p className="muted">No registrations saved yet.</p>
+          ) : (
+            <table>
+              <thead><tr><th>Manager</th><th>Team</th><th>Phone</th><th>Amount</th><th>Paid to</th></tr></thead>
+              <tbody>
+                {registrations.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.manager_name}</td>
+                    <td>{r.fpl_team_name}</td>
+                    <td>{r.phone}</td>
+                    <td>{r.currency === "USD" ? "$" : "₹"}{r.amount}</td>
+                    <td>{r.paid_to}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       <div className="card">
-        <h2>Record LMS Rebuy</h2>
+        <h2>Record LMS rebuy</h2>
         <input placeholder="Entry ID" value={entryId} onChange={(e) => setEntryId(e.target.value)} style={{ width: 160 }} />
         {" "}
         <input placeholder="Team name" value={entryName} onChange={(e) => setEntryName(e.target.value)} />
         {" "}
-        <button onClick={() => call("/api/admin/rebuy", { entryId: Number(entryId), entryName, paid: true })}>
-          Mark ₹500 paid
-        </button>
+        <button onClick={saveRebuy}>Mark ₹500 paid</button>
       </div>
 
       <div className="card" style={{ borderColor: "var(--border-strong)" }}>
@@ -208,18 +370,7 @@ export default function Admin() {
           <input placeholder="Buy-in INR" value={buyinInr} onChange={(e) => setBuyinInr(e.target.value)} style={{ width: 110 }} />
           <input placeholder="Buy-in USD" value={buyinUsd} onChange={(e) => setBuyinUsd(e.target.value)} style={{ width: 110 }} />
           <input placeholder="Admin fees INR" value={adminFeesInr} onChange={(e) => setAdminFeesInr(e.target.value)} style={{ width: 130 }} />
-          <button
-            onClick={async () => {
-              await call("/api/admin/finance", {
-                action: "setPool",
-                totalPlayers: Number(totalPlayers), buyinInr: Number(buyinInr),
-                buyinUsd: Number(buyinUsd), adminFeesInr: Number(adminFeesInr),
-              });
-              reloadFinance();
-            }}
-          >
-            Save
-          </button>
+          <button onClick={savePool}>Save</button>
         </div>
 
         {finance && (
@@ -243,17 +394,7 @@ export default function Admin() {
             <input placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 100 }} />
             <input placeholder="Assigned admin" value={assignedAdmin} onChange={(e) => setAssignedAdmin(e.target.value)} />
           </div>
-          <button
-            onClick={async () => {
-              await call("/api/admin/finance", {
-                action: "upsertPayout", prizeKey, prizeLabel, winnerName,
-                amount: Number(amount), assignedAdmin, paid: false,
-              });
-              reloadFinance();
-            }}
-          >
-            Save as unpaid
-          </button>
+          <button onClick={savePayout}>Save as unpaid</button>
         </div>
 
         {finance && finance.payouts.length > 0 && (
@@ -267,22 +408,7 @@ export default function Admin() {
                   <td>₹{Number(p.amount).toLocaleString()}</td>
                   <td>{p.assigned_admin || "—"}</td>
                   <td>{p.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Owed</span>}</td>
-                  <td>
-                    {!p.paid && (
-                      <button
-                        onClick={async () => {
-                          await call("/api/admin/finance", {
-                            action: "upsertPayout", prizeKey: p.prize_key, prizeLabel: p.prize_label,
-                            winnerEntryId: p.winner_entry_id, winnerName: p.winner_name,
-                            amount: p.amount, currency: p.currency, assignedAdmin: p.assigned_admin, paid: true,
-                          });
-                          reloadFinance();
-                        }}
-                      >
-                        Mark paid
-                      </button>
-                    )}
-                  </td>
+                  <td>{!p.paid && <button onClick={() => markPayoutPaid(p)}>Mark paid</button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -291,13 +417,25 @@ export default function Admin() {
       </div>
 
       <div className="card">
-        <h2>Activity Log</h2>
-        {log.length === 0 && <p className="muted">Nothing yet.</p>}
-        {log.map((l, i) => (
-          <pre key={i} style={{ fontSize: 12, whiteSpace: "pre-wrap", borderBottom: "1px solid var(--border)", padding: "8px 0" }}>
-            {l.time} — {l.url}{"\n"}{JSON.stringify(l.data, null, 2)}
-          </pre>
-        ))}
+        <h2>Activity log</h2>
+        <p className="muted">Persistent record of every admin action - survives a refresh, unlike a browser-only log.</p>
+        {logs.length === 0 ? (
+          <p className="muted">No activity recorded yet.</p>
+        ) : (
+          <table>
+            <thead><tr><th>When</th><th>Action</th><th>Summary</th><th>Result</th></tr></thead>
+            <tbody>
+              {logs.map((l) => (
+                <tr key={l.id}>
+                  <td style={{ whiteSpace: "nowrap" }}>{new Date(l.created_at).toLocaleString()}</td>
+                  <td>{l.action}</td>
+                  <td>{l.summary}</td>
+                  <td>{l.success ? <span className="pill alive">OK</span> : <span className="pill out">Failed</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

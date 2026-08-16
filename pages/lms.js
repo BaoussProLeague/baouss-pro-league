@@ -3,13 +3,19 @@ import { useEffect, useState } from "react";
 export default function Lms() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError(null);
     fetch("/api/lms/status")
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
 
   return (
     <div className="container">
@@ -18,7 +24,18 @@ export default function Lms() {
         <p>Starts GW2. Lowest scorer each week is eliminated. Eliminated on/before GW21 can rebuy for ₹500. Break GW22-24. LMS resumes GW25 with rebuys + GW21 survivors.</p>
       </div>
 
-      {error && <div className="card error">Couldn't load LMS status: {error}</div>}
+      {error && (
+        <div className="card error">
+          <p style={{ marginBottom: 10 }}>Couldn't load LMS status: {error}</p>
+          <button onClick={load}>Retry</button>
+        </div>
+      )}
+
+      {loading && !error && <div className="card muted">Loading LMS status…</div>}
+
+      {data && data.stillAlive.length === 0 && data.eliminations.length === 0 && (
+        <div className="card muted">LMS hasn't started yet - it kicks off from GW2.</div>
+      )}
 
       {data && (
         <>

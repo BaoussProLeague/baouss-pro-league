@@ -1,20 +1,23 @@
 import { useEffect, useState } from "react";
+import InfoTip from "../components/InfoTip";
+import { PRIZE_CATALOG, statusLabel } from "../lib/prizeCatalog";
 
-const PRIZES = [
-  { key: "teamValue", label: "Team Value", col: "value", fmt: (v) => `£${v.toFixed(1)}m` },
-  { key: "benchPoints", label: "Bench Points", col: "benchPoints", fmt: (v) => v },
-  { key: "first999", label: "First to 999", col: "gwReached", fmt: (v) => `GW${v}` },
-  { key: "first1499", label: "First to 1499", col: "gwReached", fmt: (v) => `GW${v}` },
+const LIVE_TABLES = [
+  { key: "teamValue", col: "value", fmt: (v) => `£${v.toFixed(1)}m` },
+  { key: "benchPoints", col: "benchPoints", fmt: (v) => v },
+  { key: "first999", col: "gwReached", fmt: (v) => `GW${v}` },
+  { key: "first1499", col: "gwReached", fmt: (v) => `GW${v}` },
 ];
 
-const CHIP_KEYS = ["wildcard", "freehit", "3xc", "bboost"];
+const CHIP_KEY_MAP = { wildcard: "wildcard", freehit: "freeHit", "3xc": "tripleCaptain", bboost: "benchBoost" };
 
 export default function Prizes() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [captaincy, setCaptaincy] = useState(null);
 
-  useEffect(() => {
+  const load = () => {
+    setError(null);
     fetch("/api/prizes/summary")
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
@@ -24,91 +27,73 @@ export default function Prizes() {
       .then((r) => r.json())
       .then((d) => !d.error && setCaptaincy(d.leaderboard))
       .catch(() => {});
-  }, []);
+  };
+
+  useEffect(load, []);
+
+  const leaderboardFor = (prizeKey) => {
+    if (!data) return null;
+    const live = LIVE_TABLES.find((l) => l.key === prizeKey);
+    if (live) return { rows: data[live.key], fmt: live.fmt, col: live.col };
+    const chipKey = Object.entries(CHIP_KEY_MAP).find(([, v]) => v === prizeKey)?.[0];
+    if (chipKey && data.chips) return { rows: data.chips[chipKey].leaderboard, fmt: (r) => `${r.score} pts (GW${r.gw})`, col: null, isChip: true };
+    if (prizeKey === "perfectCaptaincy" && captaincy) return { rows: captaincy, fmt: null, isCaptaincy: true };
+    return null;
+  };
 
   return (
     <div className="container">
       <div className="hero">
-        <h1>Side Prizes</h1>
-        <p>Auto-calculated from FPL data. Mega GW, Wildcard Vision, and Def+GK still need building out (see README) - everything below is live.</p>
+        <h1>All prizes</h1>
+        <p>Every prize category in the league, including ones not yet wired up to live data - hover the <strong>?</strong> next to a prize name for the exact rule.</p>
       </div>
 
-      {error && <div className="card error">Couldn't load prize data: {error}</div>}
-      {!data && !error && <div className="card muted">Crunching numbers…</div>}
+      {error && (
+        <div className="card error">
+          <p style={{ marginBottom: 10 }}>Couldn't load prize data: {error}</p>
+          <button onClick={load}>Retry</button>
+        </div>
+      )}
 
-      {data && (
-        <div className="grid">
-          {PRIZES.map((p) => (
-            <div className="card" key={p.key}>
-              <h2>{p.label}</h2>
-              {data[p.key] && data[p.key].length > 0 ? (
+      <div className="grid">
+        {PRIZE_CATALOG.map((prize) => {
+          const board = leaderboardFor(prize.key);
+          const status = statusLabel(prize.status);
+          return (
+            <div className="card" key={prize.key}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <h2 style={{ marginBottom: 0, display: "flex", alignItems: "center" }}>
+                  {prize.label}
+                  <InfoTip text={prize.description} />
+                </h2>
+                <span className={status.className}>{status.text}</span>
+              </div>
+
+              {board && board.rows && board.rows.length > 0 ? (
                 <table>
                   <tbody>
-                    {data[p.key].slice(0, 5).map((row, i) => (
+                    {board.rows.slice(0, 5).map((row, i) => (
                       <tr key={row.entry}>
                         <td>{i + 1}. {row.entryName}</td>
-                        <td style={{ textAlign: "right" }}>{p.fmt(row[p.col])}</td>
+                        <td style={{ textAlign: "right" }}>
+                          {board.isCaptaincy
+                            ? `${row.perfectCalls}/${row.gwsTracked} GWs`
+                            : board.fmt(board.col ? row[board.col] : row)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <p className="muted">Not enough data yet this season.</p>
+                <p className="muted">
+                  {prize.status === "planned"
+                    ? "Not built yet - see the project README for the plan."
+                    : "No data yet this season."}
+                </p>
               )}
             </div>
-          ))}
-        </div>
-      )}
-
-      {data && data.chips && (
-        <>
-          <div className="card">
-            <h1 style={{ fontSize: 18 }}>Chip Prizes</h1>
-            <p className="muted">Best of your two activations this season (one set per half, per the 2026/27 rules).</p>
-          </div>
-          <div className="grid">
-            {CHIP_KEYS.map((k) => (
-              <div className="card" key={k}>
-                <h2>{data.chips[k].label}</h2>
-                {data.chips[k].leaderboard.length > 0 ? (
-                  <table>
-                    <tbody>
-                      {data.chips[k].leaderboard.slice(0, 5).map((row, i) => (
-                        <tr key={row.entry}>
-                          <td>{i + 1}. {row.entryName}</td>
-                          <td style={{ textAlign: "right" }}>{row.score} pts (GW{row.gw})</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="muted">No activations recorded yet.</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <div className="card">
-        <h2>Perfect Captaincy</h2>
-        <p className="muted">Most gameweeks where your captain was actually your squad's top scorer. Updated GW-by-GW by admins after each round locks.</p>
-        {captaincy && captaincy.length > 0 ? (
-          <table>
-            <thead><tr><th>Manager</th><th>Perfect calls</th><th>GWs tracked</th></tr></thead>
-            <tbody>
-              {captaincy.slice(0, 10).map((row, i) => (
-                <tr key={row.entry}>
-                  <td>{i + 1}. {row.entryName}</td>
-                  <td>{row.perfectCalls}</td>
-                  <td>{row.gwsTracked}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="muted">Not tracked yet this season.</p>
-        )}
+          );
+        })}
       </div>
     </div>
   );

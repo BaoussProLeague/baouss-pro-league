@@ -6,18 +6,24 @@ export default function H2H() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [knockout, setKnockout] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true);
+    setError(null);
     fetch("/api/fpl/h2h")
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
 
     fetch("/api/h2h/knockout")
       .then((r) => r.json())
       .then((d) => !d.error && setKnockout(d))
       .catch(() => {});
-  }, []);
+  };
+
+  useEffect(load, []);
 
   return (
     <div className="container">
@@ -26,7 +32,14 @@ export default function H2H() {
         <p>Single H2H league through GW30, top 32 split into Gold (1-16) and Silver (17-32) cups. Single-leg knockouts: R16 (GW32) → QF (GW34) → SF (GW36) → Final (GW38).</p>
       </div>
 
-      {error && <div className="card error">Couldn't load H2H data: {error}</div>}
+      {error && (
+        <div className="card error">
+          <p style={{ marginBottom: 10 }}>Couldn't load H2H data: {error}</p>
+          <button onClick={load}>Retry</button>
+        </div>
+      )}
+
+      {loading && !error && <div className="card muted">Loading H2H standings…</div>}
 
       {data && (
         <>

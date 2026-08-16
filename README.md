@@ -60,7 +60,51 @@ the instant a GW ends risks eliminating the wrong manager if bonus points
 shift afterward. The admin page lets you trigger it deliberately once
 scores are confirmed final.
 
-## Deploy for free (two accounts, no credit card)
+## Honest QA note
+
+This build has had a thorough **code-level review pass** - every admin form
+now validates input before submission (specific error dialogs, not silent
+acceptance), every admin API route double-checks that validation server-side
+too, every admin action writes to a persistent `admin_activity_log` table,
+and every public page (Classic, H2H, LMS, Prizes) has a proper loading state,
+error state with a Retry button, and an empty state when there's genuinely no
+data yet.
+
+What this does **not** mean: I have not run this app. My environment has no
+network access, so I can't `npm install`, build it, or click through it
+myself. This is careful reading and defensive coding, not verified execution.
+Test the following yourself before trusting it fully:
+- Submit each admin form with obviously bad input (letters in a GW field, a
+  duplicate entry ID in the H2H form, an empty phone number) and confirm the
+  error dialog is accurate and the bad data never reaches the database.
+- Submit a registration and confirm it appears in the "All registrations"
+  list on the same page without a refresh.
+- Run LMS elimination for a GW that hasn't started yet and confirm you get a
+  clear "no score recorded yet" error, not a crash.
+
+## What's new in this pass
+
+- **Single admin gate** - one password unlocks LMS, captaincy, H2H
+  knockout, registrations, and Finance together. No separate finance login.
+- **Persistent activity log** (`admin_activity_log` table) - survives a
+  refresh, separate section from the action forms themselves.
+- **Real form validation** (`lib/validation.js`) - every admin form checks
+  its inputs and shows a specific, actionable error dialog before calling
+  the API. Every admin API route repeats the same validation server-side,
+  since client-side validation alone can always be bypassed.
+- **Registrations are now visible** - the bug where saved registrations
+  never appeared anywhere is fixed; there's a live list on the admin page.
+- **Complete prize catalog** (`lib/prizeCatalog.js`) - every prize from the
+  rules doc is listed on `/prizes` now, including the ones not yet
+  calculated, each with a status badge (Live / Admin-updated / Not yet
+  tracked) and a hover tooltip with the exact rule text.
+- **`/rules` page** - the Set Rules tie-break order and month→GW calendar,
+  taken directly from your rules doc.
+- **Team crests on the homepage** - all 20 Premier League clubs, images
+  loaded directly from the Premier League's own CDN (not redrawn or stored
+  by this app), with a text-initial fallback if an image fails to load.
+- **Visual overhaul** - purple/gold theme matching your season poster,
+  gradient hero headers, better tables and cards throughout.
 
 ### 1. Database — Supabase (free tier)
 1. Go to supabase.com → New project (free tier).

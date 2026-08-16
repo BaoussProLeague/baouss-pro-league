@@ -127,6 +127,20 @@ create table if not exists captain_accuracy (
 );
 
 -- =========================================================================
+-- Persistent admin activity log. Every admin action writes here so the
+-- log survives a page refresh (unlike client-side-only state) and gives
+-- you a real audit trail of who ran what, when.
+-- =========================================================================
+create table if not exists admin_activity_log (
+  id bigint generated always as identity primary key,
+  action text not null,             -- e.g. 'lms_elimination', 'registration_added'
+  summary text not null,            -- human-readable one-liner
+  detail jsonb,                     -- full payload for debugging
+  success boolean not null default true,
+  created_at timestamptz default now()
+);
+
+-- =========================================================================
 -- H2H knockout bracket - admin enters each round's result as it happens.
 -- (h2h_knockout_results table already defined above.)
 -- =========================================================================

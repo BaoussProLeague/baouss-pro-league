@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         finished: e.finished,
         is_current: e.is_current,
       })),
-      teams: data.teams,
+      teams: data.teams.map((t) => ({ id: t.id, name: t.name, short_name: t.short_name, code: t.code })),
       // trimmed player fields - full elements list is large, only send what the UI needs
       elements: data.elements.map((p) => ({
         id: p.id,

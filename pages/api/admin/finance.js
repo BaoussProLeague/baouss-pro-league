@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../../../lib/supabase";
+import { logAdminActivity } from "../../../lib/adminLog";
 
 // GET  ?password=...                 -> pool config + all payouts
 // POST { password, action: 'setPool' | 'upsertPayout', ...fields }
@@ -37,6 +38,12 @@ export default async function handler(req, res) {
     try {
       if (action === "setPool") {
         const { totalPlayers, buyinInr, buyinUsd, adminFeesInr } = req.body;
+        if (totalPlayers === undefined || Number(totalPlayers) <= 0) {
+          return res.status(400).json({ error: "Total players must be a positive number." });
+        }
+        if (buyinInr === undefined || Number(buyinInr) < 0) {
+          return res.status(400).json({ error: "Buy-in INR must be zero or a positive number." });
+        }
         const { error } = await supabaseAdmin
           .from("prize_pool_config")
           .update({
@@ -48,11 +55,18 @@ export default async function handler(req, res) {
           })
           .eq("id", 1);
         if (error) throw error;
+        await logAdminActivity("finance_pool_updated", `Pool set: ${totalPlayers} players @ ₹${buyinInr}`, req.body, true);
         return res.status(200).json({ status: "ok" });
       }
 
       if (action === "upsertPayout") {
         const { prizeKey, prizeLabel, winnerEntryId, winnerName, amount, currency, assignedAdmin, paid } = req.body;
+        if (!prizeKey || !prizeLabel || !winnerName) {
+          return res.status(400).json({ error: "Prize key, label, and winner name are all required." });
+        }
+        if (amount === undefined || Number(amount) <= 0) {
+          return res.status(400).json({ error: "Amount must be a positive number." });
+        }
         const { error } = await supabaseAdmin.from("prize_payouts").upsert(
           {
             prize_key: prizeKey,
@@ -68,12 +82,19 @@ export default async function handler(req, res) {
           { onConflict: "prize_key" }
         );
         if (error) throw error;
+        await logAdminActivity(
+          "finance_payout_updated",
+          `${winnerName} - ${prizeLabel} - ₹${amount} - ${paid ? "marked paid" : "recorded as owed"}`,
+          req.body,
+          true
+        );
         return res.status(200).json({ status: "ok" });
       }
 
-      res.status(400).json({ error: "Unknown action" });
+      res.status(400).json({ error: "Unknown action." });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      await logAdminActivity("finance_action_failed", err.message, req.body, false);
+      res.status(500).json({ error: `Couldn't save: ${err.message}` });
     }
   }
 }
