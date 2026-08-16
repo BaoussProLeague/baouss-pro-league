@@ -13,7 +13,10 @@ export default function Nav() {
   const router = useRouter();
   return (
     <div className="nav">
-      <span className="brand">Baouss<span>ProLeague</span></span>
+      <span className="brand">
+        <span className="crest">⚡</span>
+        Baouss<span className="gold">ProLeague</span>
+      </span>
       {links.map((l) => (
         <Link key={l.href} href={l.href} className={router.pathname === l.href ? "active" : ""}>
           {l.label}

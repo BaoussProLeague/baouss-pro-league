@@ -13,11 +13,9 @@ export default function Home() {
 
   return (
     <div className="container">
-      <div className="card">
+      <div className="hero">
         <h1>Classic League</h1>
-        <p className="muted">
-          Highest overall score (incl. hits) at end of season wins. Top 8 places paid. Ties resolved by Set Rules.
-        </p>
+        <p>Highest overall score (incl. hits) at end of season wins. Top 8 places paid. Ties resolved by Set Rules.</p>
       </div>
 
       {error && <div className="card error">Couldn't load standings: {error}</div>}

@@ -28,13 +28,9 @@ export default function Prizes() {
 
   return (
     <div className="container">
-      <div className="card">
+      <div className="hero">
         <h1>Side Prizes</h1>
-        <p className="muted">
-          Auto-calculated from FPL data. Captain Points, Mega GW, chip prizes (WC/TC/BB/FH), Wildcard Vision
-          and Def+GK need per-gameweek picks data - built as a working example for Captain Points only for now
-          (see README for extending the rest, same pattern applies).
-        </p>
+        <p>Auto-calculated from FPL data. Mega GW, Wildcard Vision, and Def+GK still need building out (see README) - everything below is live.</p>
       </div>
 
       {error && <div className="card error">Couldn't load prize data: {error}</div>}

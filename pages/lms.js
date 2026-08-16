@@ -13,12 +13,9 @@ export default function Lms() {
 
   return (
     <div className="container">
-      <div className="card">
+      <div className="hero">
         <h1>Last Manager Standing</h1>
-        <p className="muted">
-          Starts GW2. Lowest scorer each week is eliminated. Eliminated on/before GW21 can rebuy for ₹500.
-          Break GW22-24. LMS resumes GW25 with rebuys + GW21 survivors.
-        </p>
+        <p>Starts GW2. Lowest scorer each week is eliminated. Eliminated on/before GW21 can rebuy for ₹500. Break GW22-24. LMS resumes GW25 with rebuys + GW21 survivors.</p>
       </div>
 
       {error && <div className="card error">Couldn't load LMS status: {error}</div>}

@@ -21,12 +21,9 @@ export default function H2H() {
 
   return (
     <div className="container">
-      <div className="card">
+      <div className="hero">
         <h1>Head-to-Head League</h1>
-        <p className="muted">
-          Single H2H league through GW30, top 32 split into Gold (1-16) and Silver (17-32) cups.
-          Single-leg knockouts: R16 (GW32) → QF (GW34) → SF (GW36) → Final (GW38).
-        </p>
+        <p>Single H2H league through GW30, top 32 split into Gold (1-16) and Silver (17-32) cups. Single-leg knockouts: R16 (GW32) → QF (GW34) → SF (GW36) → Final (GW38).</p>
       </div>
 
       {error && <div className="card error">Couldn't load H2H data: {error}</div>}
