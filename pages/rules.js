@@ -1,31 +1,33 @@
+import { useEffect, useState } from "react";
+
 export default function Rules() {
-  const months = [
-    ["August", "1, 2, 3"],
-    ["September", "4, 5, 6"],
-    ["October", "7, 8, 9"],
-    ["November", "10, 11, 12, 13"],
-    ["December", "14, 15, 16, 17, 18, 19"],
-    ["January", "20, 21, 22, 23, 24"],
-    ["February", "25, 26, 27, 28"],
-    ["March", "29, 30, 31"],
-    ["April", "32, 33, 34"],
-    ["May", "35, 36, 37, 38"],
-  ];
+  const [months, setMonths] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = () => {
+    setError(null);
+    fetch("/api/fpl/months")
+      .then((r) => r.json())
+      .then((d) => (d.error ? setError(d.error) : setMonths(d.months)))
+      .catch((e) => setError(e.message));
+  };
+
+  useEffect(load, []);
 
   return (
     <div className="container">
       <div className="hero">
         <h1>Set Rules</h1>
-        <p>The tie-break order that applies whenever two or more managers are level for any prize, and the calendar used to assign gameweeks to months.</p>
+        <p>The tie-break order that applies whenever two or more managers are level for any prize, and this season's actual gameweek-to-month calendar, pulled live from FPL so it's never out of date.</p>
       </div>
 
       <div className="card">
         <h2>Tie-break order</h2>
         <p className="muted" style={{ marginBottom: 14 }}>
-          Applied over whatever period the specific prize covers (a single GW, a month, or the full season). Mega GW is the one exception - it skips straight to bench points since total season points aren't relevant to a single-GW prize.
+          Applied across whatever window the specific prize covers - a single gameweek, a calendar month, or the full season. Mega GW is the one exception: it skips straight to bench points, since season-long totals aren't meaningful for a single-gameweek prize.
         </p>
         <ol style={{ paddingLeft: 20, lineHeight: 2, fontSize: 14 }}>
-          <li>Total points (overall points) - except for Mega GW calculations</li>
+          <li>Total points (overall points) - except for Mega GW</li>
           <li>Bench points</li>
           <li>Captain points</li>
           <li>Coin toss</li>
@@ -33,18 +35,27 @@ export default function Rules() {
       </div>
 
       <div className="card">
-        <h2>FPL calendar months → gameweeks</h2>
+        <h2>2026/27 calendar months → gameweeks</h2>
         <p className="muted" style={{ marginBottom: 14 }}>
-          A gameweek counts as part of the month it begins in. Used for Manager of the Month and monthly Rank Jump.
+          A gameweek counts toward the month its deadline falls in. Pulled live from FPL's own schedule - if a fixture gets rearranged for TV, this updates with it.
         </p>
-        <table>
-          <thead><tr><th>Month</th><th>Gameweeks</th></tr></thead>
-          <tbody>
-            {months.map(([m, gws]) => (
-              <tr key={m}><td>{m}</td><td>{gws}</td></tr>
-            ))}
-          </tbody>
-        </table>
+        {error && (
+          <div>
+            <p className="error" style={{ marginBottom: 10 }}>Couldn't load the live calendar: {error}</p>
+            <button onClick={load}>Retry</button>
+          </div>
+        )}
+        {!months && !error && <p className="muted">Loading this season's schedule…</p>}
+        {months && (
+          <table>
+            <thead><tr><th>Month</th><th>Gameweeks</th></tr></thead>
+            <tbody>
+              {Object.entries(months).map(([m, gws]) => (
+                <tr key={m}><td>{m}</td><td>{gws.join(", ")}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

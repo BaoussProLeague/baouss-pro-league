@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Classic" },
@@ -10,12 +11,32 @@ const links = [
   { href: "/admin", label: "Admin" },
 ];
 
+// Drop your own logo file at /public/logo.png and it swaps in
+// automatically here, with the lightning bolt as a fallback if the file
+// isn't there yet - no code changes needed when you're ready to add it.
+function Crest() {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <span className="crest">⚡</span>;
+  return (
+    <span className="crest">
+      <img
+        src="/logo.png"
+        alt="Baouss Pro League"
+        width={20}
+        height={20}
+        style={{ objectFit: "contain" }}
+        onError={() => setFailed(true)}
+      />
+    </span>
+  );
+}
+
 export default function Nav() {
   const router = useRouter();
   return (
     <div className="nav">
       <span className="brand">
-        <span className="crest">⚡</span>
+        <Crest />
         Baouss<span className="gold">ProLeague</span>
       </span>
       {links.map((l) => (

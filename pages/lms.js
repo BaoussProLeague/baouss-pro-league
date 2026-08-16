@@ -21,7 +21,7 @@ export default function Lms() {
     <div className="container">
       <div className="hero">
         <h1>Last Manager Standing</h1>
-        <p>Starts GW2. Lowest scorer each week is eliminated. Eliminated on/before GW21 can rebuy for ₹500. Break GW22-24. LMS resumes GW25 with rebuys + GW21 survivors.</p>
+        <p>A weekly knockout starting GW2 - lowest scorer each gameweek is eliminated until one manager remains. Eliminated on or before GW21? You can buy back in for ₹500 during the GW22-24 break, rejoining when play resumes at GW25.</p>
       </div>
 
       {error && (

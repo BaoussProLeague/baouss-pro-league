@@ -141,6 +141,33 @@ create table if not exists admin_activity_log (
 );
 
 -- =========================================================================
+-- Mega GW - admin marks which gameweeks are official Mega GWs ahead of
+-- time. The winner itself is computed live from history data, not stored
+-- here - this table only holds which GWs count and their label/prize.
+-- =========================================================================
+create table if not exists mega_gws (
+  id bigint generated always as identity primary key,
+  gw int not null unique,
+  label text not null,
+  prize_amount_inr numeric,
+  created_at timestamptz default now()
+);
+
+-- =========================================================================
+-- Def+GK points log - genuinely needs per-manager-per-GW picks data, so
+-- it's admin-triggered one gameweek at a time, going forward only.
+-- =========================================================================
+create table if not exists def_gk_points_log (
+  id bigint generated always as identity primary key,
+  entry_id bigint not null,
+  entry_name text not null,
+  gw int not null,
+  points int not null default 0,
+  created_at timestamptz default now(),
+  unique (entry_id, gw)
+);
+
+-- =========================================================================
 -- H2H knockout bracket - admin enters each round's result as it happens.
 -- (h2h_knockout_results table already defined above.)
 -- =========================================================================

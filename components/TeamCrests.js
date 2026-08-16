@@ -39,7 +39,7 @@ export default function TeamCrests({ teams }) {
   return (
     <div className="card">
       <h2>This season's clubs</h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "flex-start" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "flex-start" }} className="team-crest-grid">
         {teams.map((t) => (
           <Crest key={t.id} team={t} />
         ))}

@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
 import Dialog from "../components/Dialog";
-import { validateGw, validateEntryId, validateRequired, validatePositiveNumber, validatePhone, firstError } from "../lib/validation";
+import { validateGw, validateRequired, validatePositiveNumber, validatePhone, firstError } from "../lib/validation";
 
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [dialog, setDialog] = useState(null); // { type, title, message }
+  const [dialog, setDialog] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [classicEntries, setClassicEntries] = useState([]);
 
   const [gw, setGw] = useState("");
   const [captaincyGw, setCaptaincyGw] = useState("");
+  const [defgkGw, setDefgkGw] = useState("");
 
+  const [regId, setRegId] = useState(null); // non-null while editing
   const [regName, setRegName] = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [regTeam, setRegTeam] = useState("");
@@ -19,9 +24,10 @@ export default function Admin() {
   const [regPaidTo, setRegPaidTo] = useState("");
   const [registrations, setRegistrations] = useState([]);
 
-  const [entryId, setEntryId] = useState("");
-  const [entryName, setEntryName] = useState("");
+  const [rebuyEntry, setRebuyEntry] = useState("");
+  const [rebuys, setRebuys] = useState([]);
 
+  const [koId, setKoId] = useState(null);
   const [koCup, setKoCup] = useState("gold");
   const [koRound, setKoRound] = useState("r16");
   const [koGw, setKoGw] = useState("");
@@ -29,6 +35,12 @@ export default function Admin() {
   const [koEntry2, setKoEntry2] = useState("");
   const [koScore1, setKoScore1] = useState("");
   const [koScore2, setKoScore2] = useState("");
+  const [knockouts, setKnockouts] = useState([]);
+
+  const [megaGwGw, setMegaGwGw] = useState("");
+  const [megaGwLabel, setMegaGwLabel] = useState("");
+  const [megaGwPrize, setMegaGwPrize] = useState("");
+  const [megaGws, setMegaGws] = useState([]);
 
   const [finance, setFinance] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState("");
@@ -42,9 +54,96 @@ export default function Admin() {
   const [assignedAdmin, setAssignedAdmin] = useState("");
 
   const [logs, setLogs] = useState([]);
+  const [showFullLog, setShowFullLog] = useState(false);
 
   const showError = (message) => setDialog({ type: "error", title: "Fix this before continuing", message });
   const showSuccess = (message) => setDialog({ type: "success", title: "Saved", message });
+
+  const entryLabel = (id) => {
+    const e = classicEntries.find((c) => c.entry === id);
+    return e ? `${e.managerName} (${e.entryName})` : `Entry ${id}`;
+  };
+
+  const call = async (url, body) => {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ...body }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        showError(data.error);
+        return null;
+      }
+      return data;
+    } catch (e) {
+      showError("Couldn't reach the server. Check your internet connection and try again.");
+      return null;
+    }
+  };
+
+  const loadClassicEntries = async () => {
+    try {
+      const res = await fetch("/api/fpl/classic");
+      const d = await res.json();
+      if (!d.error) {
+        setClassicEntries(d.standings.map((s) => ({ entry: s.entry, entryName: s.entryName, managerName: s.managerName })));
+      }
+    } catch (e) {}
+  };
+
+  const loadRegistrations = async () => {
+    try {
+      const res = await fetch(`/api/admin/registrations-list?password=${encodeURIComponent(password)}`);
+      const d = await res.json();
+      if (!d.error) setRegistrations(d.registrations);
+    } catch (e) {}
+  };
+
+  const loadRebuys = async () => {
+    try {
+      const res = await fetch("/api/lms/status");
+      const d = await res.json();
+      if (!d.error) setRebuys(d.rebuys || []);
+    } catch (e) {}
+  };
+
+  const loadKnockouts = async () => {
+    try {
+      const res = await fetch("/api/h2h/knockout");
+      const d = await res.json();
+      if (!d.error) setKnockouts([...(d.gold || []), ...(d.silver || [])]);
+    } catch (e) {}
+  };
+
+  const loadMegaGws = async () => {
+    try {
+      const res = await fetch("/api/prizes/mega-gw");
+      const d = await res.json();
+      if (!d.error) setMegaGws(d.megaGws);
+    } catch (e) {}
+  };
+
+  const loadLogs = async () => {
+    try {
+      const res = await fetch(`/api/admin/logs?password=${encodeURIComponent(password)}`);
+      const d = await res.json();
+      if (!d.error) setLogs(d.logs);
+    } catch (e) {}
+  };
+
+  const reloadFinance = async () => {
+    const res = await fetch(`/api/admin/finance?password=${encodeURIComponent(password)}`);
+    const d = await res.json();
+    if (!d.error) setFinance(d);
+  };
+
+  const refreshAll = async () => {
+    setRefreshing(true);
+    await Promise.all([loadClassicEntries(), loadRegistrations(), loadRebuys(), loadKnockouts(), loadMegaGws(), loadLogs(), reloadFinance()]);
+    setRefreshing(false);
+  };
 
   const unlock = async () => {
     setAuthError(null);
@@ -68,62 +167,17 @@ export default function Admin() {
     }
   };
 
-  const call = async (url, body) => {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, ...body }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        showError(data.error);
-        return null;
-      }
-      return data;
-    } catch (e) {
-      showError("Couldn't reach the server. Check your internet connection and try again.");
-      return null;
-    }
-  };
-
-  const loadRegistrations = async () => {
-    try {
-      const res = await fetch(`/api/admin/registrations-list?password=${encodeURIComponent(password)}`);
-      const d = await res.json();
-      if (!d.error) setRegistrations(d.registrations);
-    } catch (e) {
-      // Silent - the registrations card itself already shows "no entries" if this stays empty.
-    }
-  };
-
-  const loadLogs = async () => {
-    try {
-      const res = await fetch(`/api/admin/logs?password=${encodeURIComponent(password)}`);
-      const d = await res.json();
-      if (!d.error) setLogs(d.logs);
-    } catch (e) {}
-  };
-
-  const reloadFinance = async () => {
-    const res = await fetch(`/api/admin/finance?password=${encodeURIComponent(password)}`);
-    const d = await res.json();
-    if (!d.error) setFinance(d);
-  };
-
   useEffect(() => {
-    if (unlocked) {
-      loadRegistrations();
-      loadLogs();
-    }
+    if (unlocked) refreshAll();
   }, [unlocked]);
 
+  // ---------- LMS / Captaincy / Def+GK ----------
   const runLms = async () => {
     const err = firstError([validateGw(gw)]);
     if (err) return showError(err);
     const result = await call("/api/admin/lms-run", { gw });
     if (result) {
-      showSuccess(result.status === "manual_action_required" ? result.message : `LMS elimination recorded for GW${gw}.`);
+      showSuccess(result.status === "manual_action_required" || result.status === "no_action" ? result.message : `LMS elimination recorded for GW${gw}.`);
       loadLogs();
     }
   };
@@ -133,34 +187,34 @@ export default function Admin() {
     if (err) return showError(err);
     const result = await call("/api/admin/captaincy-run", { gw: captaincyGw });
     if (result) {
-      showSuccess(`Captain accuracy recorded for ${result.recorded} managers in GW${captaincyGw}.`);
+      showSuccess(`Captain accuracy and Captain Points recorded for ${result.recorded} managers in GW${captaincyGw}.`);
       loadLogs();
     }
   };
 
-  const saveKnockout = async () => {
-    const err = firstError([
-      validateGw(koGw),
-      validateEntryId(koEntry1, "Entry ID 1"),
-      validateEntryId(koEntry2, "Entry ID 2"),
-    ]);
+  const runDefGk = async () => {
+    const err = firstError([validateGw(defgkGw)]);
     if (err) return showError(err);
-    if (koEntry1 === koEntry2) return showError("Entry ID 1 and Entry ID 2 can't be the same team.");
-
-    const result = await call("/api/admin/h2h-knockout", {
-      cup: koCup, round: koRound, gw: koGw,
-      entryId1: Number(koEntry1), entryId2: Number(koEntry2),
-      score1: koScore1 ? Number(koScore1) : null,
-      score2: koScore2 ? Number(koScore2) : null,
-      winnerEntryId: koScore1 && koScore2 ? (Number(koScore1) > Number(koScore2) ? Number(koEntry1) : Number(koEntry2)) : null,
-    });
+    const result = await call("/api/admin/defgk-run", { gw: defgkGw });
     if (result) {
-      showSuccess("Knockout result saved.");
-      setKoGw(""); setKoEntry1(""); setKoEntry2(""); setKoScore1(""); setKoScore2("");
+      showSuccess(`Def+GK points recorded for ${result.recorded} managers in GW${defgkGw}.`);
       loadLogs();
     }
   };
 
+  // ---------- Registrations ----------
+  const startEditReg = (r) => {
+    setRegId(r.id);
+    setRegName(r.manager_name);
+    setRegPhone(r.phone || "");
+    setRegTeam(r.fpl_team_name || "");
+    setRegAmount(r.amount || "");
+    setRegCurrency(r.currency || "INR");
+    setRegPaidTo(r.paid_to || "");
+  };
+  const clearRegForm = () => {
+    setRegId(null); setRegName(""); setRegPhone(""); setRegTeam(""); setRegAmount(""); setRegPaidTo("");
+  };
   const saveRegistration = async () => {
     const err = firstError([
       validateRequired(regName, "Manager name"),
@@ -170,52 +224,125 @@ export default function Admin() {
       validateRequired(regPaidTo, "Paid to"),
     ]);
     if (err) return showError(err);
-
     const result = await call("/api/admin/registration", {
+      action: regId ? "update" : "add", id: regId,
       managerName: regName, phone: regPhone, fplTeamName: regTeam,
       amount: Number(regAmount), currency: regCurrency, paidTo: regPaidTo, paid: true,
     });
     if (result) {
-      showSuccess(`Registration saved for ${regName} (${regTeam}).`);
-      setRegName(""); setRegPhone(""); setRegTeam(""); setRegAmount(""); setRegPaidTo("");
+      showSuccess(regId ? `Registration updated for ${regName}.` : `Registration saved for ${regName} (${regTeam}).`);
+      clearRegForm();
+      loadRegistrations();
+      loadLogs();
+    }
+  };
+  const deleteRegistration = async (r) => {
+    const result = await call("/api/admin/registration", { action: "delete", id: r.id });
+    if (result) {
+      showSuccess(`Registration for ${r.manager_name} deleted.`);
       loadRegistrations();
       loadLogs();
     }
   };
 
+  // ---------- LMS Rebuy ----------
   const saveRebuy = async () => {
-    const err = firstError([validateEntryId(entryId), validateRequired(entryName, "Team name")]);
-    if (err) return showError(err);
-    const result = await call("/api/admin/rebuy", { entryId: Number(entryId), entryName, paid: true });
+    if (!rebuyEntry) return showError("Select a team to record their rebuy.");
+    const label = entryLabel(Number(rebuyEntry));
+    const result = await call("/api/admin/rebuy", { action: "add", entryId: Number(rebuyEntry), entryName: label, paid: true });
     if (result) {
-      showSuccess(`Rebuy recorded for ${entryName}.`);
-      setEntryId(""); setEntryName("");
+      showSuccess(`Rebuy recorded for ${label}.`);
+      setRebuyEntry("");
+      loadRebuys();
+      loadLogs();
+    }
+  };
+  const deleteRebuy = async (r) => {
+    const result = await call("/api/admin/rebuy", { action: "delete", entryId: r.entry_id, entryName: r.entry_name });
+    if (result) {
+      showSuccess(`Rebuy entry for ${r.entry_name} removed.`);
+      loadRebuys();
       loadLogs();
     }
   };
 
+  // ---------- H2H Knockout ----------
+  const startEditKo = (r) => {
+    setKoId(r.id); setKoCup(r.cup); setKoRound(r.round); setKoGw(String(r.gw));
+    setKoEntry1(String(r.entry_id_1)); setKoEntry2(String(r.entry_id_2));
+    setKoScore1(r.score_1 ?? ""); setKoScore2(r.score_2 ?? "");
+  };
+  const clearKoForm = () => {
+    setKoId(null); setKoGw(""); setKoEntry1(""); setKoEntry2(""); setKoScore1(""); setKoScore2("");
+  };
+  const saveKnockout = async () => {
+    const err = firstError([validateGw(koGw)]);
+    if (err) return showError(err);
+    if (!koEntry1 || !koEntry2) return showError("Select both teams for this fixture.");
+    if (koEntry1 === koEntry2) return showError("The two teams in a fixture can't be the same team.");
+
+    const result = await call("/api/admin/h2h-knockout", {
+      action: koId ? "update" : "add", id: koId,
+      cup: koCup, round: koRound, gw: koGw,
+      entryId1: Number(koEntry1), entryId2: Number(koEntry2),
+      score1: koScore1 !== "" ? Number(koScore1) : null,
+      score2: koScore2 !== "" ? Number(koScore2) : null,
+      winnerEntryId: koScore1 !== "" && koScore2 !== "" ? (Number(koScore1) > Number(koScore2) ? Number(koEntry1) : Number(koEntry2)) : null,
+    });
+    if (result) {
+      showSuccess(koId ? "Knockout result updated." : "Knockout result saved.");
+      clearKoForm();
+      loadKnockouts();
+      loadLogs();
+    }
+  };
+  const deleteKnockout = async (r) => {
+    const result = await call("/api/admin/h2h-knockout", { action: "delete", id: r.id });
+    if (result) {
+      showSuccess("Knockout result deleted.");
+      loadKnockouts();
+      loadLogs();
+    }
+  };
+
+  // ---------- Mega GW ----------
+  const saveMegaGw = async () => {
+    const err = firstError([validateGw(megaGwGw), validateRequired(megaGwLabel, "Label")]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/mega-gw", {
+      action: "add", gw: megaGwGw, label: megaGwLabel,
+      prizeAmountInr: megaGwPrize ? Number(megaGwPrize) : null,
+    });
+    if (result) {
+      showSuccess(`GW${megaGwGw} marked as a Mega GW.`);
+      setMegaGwGw(""); setMegaGwLabel(""); setMegaGwPrize("");
+      loadMegaGws();
+      loadLogs();
+    }
+  };
+  const deleteMegaGw = async (mg) => {
+    const result = await call("/api/admin/mega-gw", { action: "delete", id: mg.id });
+    if (result) {
+      showSuccess(`Mega GW at GW${mg.gw} removed.`);
+      loadMegaGws();
+      loadLogs();
+    }
+  };
+
+  // ---------- Finance ----------
   const savePool = async () => {
-    const err = firstError([
-      validatePositiveNumber(totalPlayers, "Total players"),
-      validatePositiveNumber(buyinInr, "Buy-in INR"),
-    ]);
+    const err = firstError([validatePositiveNumber(totalPlayers, "Total players"), validatePositiveNumber(buyinInr, "Buy-in INR")]);
     if (err) return showError(err);
     const result = await call("/api/admin/finance", {
       action: "setPool", totalPlayers: Number(totalPlayers), buyinInr: Number(buyinInr),
       buyinUsd: Number(buyinUsd) || 0, adminFeesInr: Number(adminFeesInr) || 0,
     });
-    if (result) {
-      showSuccess("Prize pool settings saved.");
-      reloadFinance();
-    }
+    if (result) { showSuccess("Prize pool settings saved."); reloadFinance(); }
   };
-
   const savePayout = async () => {
     const err = firstError([
-      validateRequired(prizeKey, "Prize key"),
-      validateRequired(prizeLabel, "Prize label"),
-      validateRequired(winnerName, "Winner name"),
-      validatePositiveNumber(amount, "Amount"),
+      validateRequired(prizeKey, "Prize key"), validateRequired(prizeLabel, "Prize label"),
+      validateRequired(winnerName, "Winner name"), validatePositiveNumber(amount, "Amount"),
     ]);
     if (err) return showError(err);
     const result = await call("/api/admin/finance", {
@@ -227,18 +354,27 @@ export default function Admin() {
       reloadFinance();
     }
   };
-
   const markPayoutPaid = async (p) => {
     const result = await call("/api/admin/finance", {
       action: "upsertPayout", prizeKey: p.prize_key, prizeLabel: p.prize_label,
       winnerEntryId: p.winner_entry_id, winnerName: p.winner_name,
       amount: p.amount, currency: p.currency, assignedAdmin: p.assigned_admin, paid: true,
     });
-    if (result) {
-      showSuccess(`Marked ${p.winner_name}'s payout as paid.`);
-      reloadFinance();
-    }
+    if (result) { showSuccess(`Marked ${p.winner_name}'s payout as paid.`); reloadFinance(); }
   };
+
+  const exportExcel = () => {
+    window.location.href = `/api/admin/export?password=${encodeURIComponent(password)}`;
+  };
+
+  const teamOptions = (
+    <>
+      <option value="">Select a team…</option>
+      {classicEntries.map((e) => (
+        <option key={e.entry} value={e.entry}>{e.managerName} ({e.entryName})</option>
+      ))}
+    </>
+  );
 
   if (!unlocked) {
     return (
@@ -246,7 +382,7 @@ export default function Admin() {
         <Dialog dialog={dialog} onClose={() => setDialog(null)} />
         <div className="card" style={{ maxWidth: 420, margin: "3rem auto", textAlign: "center" }}>
           <h1 style={{ fontSize: 20 }}>Admin</h1>
-          <p className="muted">Enter the admin password to manage LMS, H2H, registrations, and finance.</p>
+          <p className="muted">Enter the admin password to manage the whole league from here.</p>
           <input
             type="password" placeholder="Admin password" value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -262,33 +398,112 @@ export default function Admin() {
 
   const grossPool = (Number(totalPlayers) || 0) * (Number(buyinInr) || 0);
   const netPool = finance ? grossPool - (Number(adminFeesInr) || 0) + finance.rebuyIncome : 0;
+  const recentLogs = logs.slice(0, 5);
 
   return (
     <div className="container">
       <Dialog dialog={dialog} onClose={() => setDialog(null)} />
 
-      <div className="hero">
-        <h1>Admin</h1>
-        <p>Every action below is validated before it's saved - bad input gets caught with a specific error, not silently accepted. Everything here, including finance, is behind this one password.</p>
+      <div className="hero" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Admin</h1>
+          <p>Everything for running the league lives here - LMS, H2H, Mega GW, registrations, and finance, all behind this one password.</p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={refreshAll} disabled={refreshing}>{refreshing ? "Refreshing…" : "Refresh data"}</button>
+          <button onClick={exportExcel}>Export to Excel</button>
+        </div>
       </div>
+
+      {recentLogs.length > 0 && (
+        <div className="card" style={{ padding: "14px 20px" }}>
+          <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-2)", marginBottom: 8 }}>Recent activity</p>
+          {recentLogs.map((l) => (
+            <div key={l.id} style={{ fontSize: 13, padding: "3px 0", color: "var(--muted)" }}>
+              <span style={{ color: l.success ? "var(--success)" : "var(--danger)" }}>●</span> {l.summary}
+            </div>
+          ))}
+          {logs.length > 5 && (
+            <button onClick={() => setShowFullLog((s) => !s)} style={{ marginTop: 10, fontSize: 12, padding: "6px 12px" }}>
+              {showFullLog ? "Hide full log" : `Show full log (${logs.length})`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {showFullLog && logs.length > 5 && (
+        <div className="card">
+          <h2>Full activity log</h2>
+          <table>
+            <thead><tr><th>When</th><th>Action</th><th>Summary</th><th>Result</th></tr></thead>
+            <tbody>
+              {logs.map((l) => (
+                <tr key={l.id}>
+                  <td style={{ whiteSpace: "nowrap" }}>{new Date(l.created_at).toLocaleString()}</td>
+                  <td>{l.action}</td>
+                  <td>{l.summary}</td>
+                  <td>{l.success ? <span className="pill alive">OK</span> : <span className="pill out">Failed</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="card">
         <h2>Run LMS elimination</h2>
-        <p className="muted">Only run after a GW locks and bonus points settle - GW must be 1-38.</p>
-        <input placeholder="Gameweek number" value={gw} onChange={(e) => setGw(e.target.value)} style={{ width: 160 }} />
+        <p className="muted">Only run after a GW locks and bonus points settle.</p>
+        <input placeholder="Gameweek (1-38)" value={gw} onChange={(e) => setGw(e.target.value)} style={{ width: 160 }} />
         {" "}
         <button onClick={runLms}>Run elimination for this GW</button>
       </div>
 
       <div className="card">
-        <h2>Run captain accuracy check (Perfect Captaincy)</h2>
-        <input placeholder="Gameweek number" value={captaincyGw} onChange={(e) => setCaptaincyGw(e.target.value)} style={{ width: 160 }} />
+        <h2>Run captain accuracy + Captain Points</h2>
+        <p className="muted">One action powers both Perfect Captaincy and the season Captain Points total.</p>
+        <input placeholder="Gameweek (1-38)" value={captaincyGw} onChange={(e) => setCaptaincyGw(e.target.value)} style={{ width: 160 }} />
         {" "}
         <button onClick={runCaptaincy}>Run for this GW</button>
       </div>
 
       <div className="card">
-        <h2>Record H2H knockout result</h2>
+        <h2>Run Def+GK points</h2>
+        <p className="muted">Tracked from whenever you first run this - earlier gameweeks aren't backfilled.</p>
+        <input placeholder="Gameweek (1-38)" value={defgkGw} onChange={(e) => setDefgkGw(e.target.value)} style={{ width: 160 }} />
+        {" "}
+        <button onClick={runDefGk}>Run for this GW</button>
+      </div>
+
+      <div className="card">
+        <h2>Mega GW</h2>
+        <p className="muted">Mark a gameweek as an official Mega GW. The winner is calculated automatically once that GW is played - you're only marking which GWs count.</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+          <input placeholder="Gameweek" value={megaGwGw} onChange={(e) => setMegaGwGw(e.target.value)} style={{ width: 110 }} />
+          <input placeholder="Label, e.g. Double Gameweek" value={megaGwLabel} onChange={(e) => setMegaGwLabel(e.target.value)} />
+          <input placeholder="Prize amount INR (optional)" value={megaGwPrize} onChange={(e) => setMegaGwPrize(e.target.value)} style={{ width: 180 }} />
+        </div>
+        <button onClick={saveMegaGw}>Add Mega GW</button>
+
+        {megaGws.length > 0 && (
+          <table style={{ marginTop: 14 }}>
+            <thead><tr><th>GW</th><th>Label</th><th>Prize</th><th></th></tr></thead>
+            <tbody>
+              {megaGws.map((mg) => (
+                <tr key={mg.id}>
+                  <td>{mg.gw}</td>
+                  <td>{mg.label}</td>
+                  <td>{mg.prizeAmountInr ? `₹${mg.prizeAmountInr}` : "—"}</td>
+                  <td><button onClick={() => deleteMegaGw(mg)}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>H2H knockout results</h2>
+        <p className="muted">FPL doesn't know about your custom Gold/Silver bracket - enter each round's result once it's played.</p>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
           <select value={koCup} onChange={(e) => setKoCup(e.target.value)}>
             <option value="gold">Gold Cup</option>
@@ -303,12 +518,34 @@ export default function Admin() {
           <input placeholder="GW" value={koGw} onChange={(e) => setKoGw(e.target.value)} style={{ width: 80 }} />
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-          <input placeholder="Entry ID 1" value={koEntry1} onChange={(e) => setKoEntry1(e.target.value)} style={{ width: 120 }} />
-          <input placeholder="Score 1" value={koScore1} onChange={(e) => setKoScore1(e.target.value)} style={{ width: 90 }} />
-          <input placeholder="Entry ID 2" value={koEntry2} onChange={(e) => setKoEntry2(e.target.value)} style={{ width: 120 }} />
-          <input placeholder="Score 2" value={koScore2} onChange={(e) => setKoScore2(e.target.value)} style={{ width: 90 }} />
+          <select value={koEntry1} onChange={(e) => setKoEntry1(e.target.value)} style={{ minWidth: 200 }}>{teamOptions}</select>
+          <input placeholder="Score" value={koScore1} onChange={(e) => setKoScore1(e.target.value)} style={{ width: 90 }} />
+          <select value={koEntry2} onChange={(e) => setKoEntry2(e.target.value)} style={{ minWidth: 200 }}>{teamOptions}</select>
+          <input placeholder="Score" value={koScore2} onChange={(e) => setKoScore2(e.target.value)} style={{ width: 90 }} />
         </div>
-        <button onClick={saveKnockout}>Save result</button>
+        <button onClick={saveKnockout}>{koId ? "Update result" : "Save result"}</button>
+        {koId && <button onClick={clearKoForm} style={{ marginLeft: 8 }}>Cancel edit</button>}
+
+        {knockouts.length > 0 && (
+          <table style={{ marginTop: 14 }}>
+            <thead><tr><th>Cup</th><th>Round</th><th>GW</th><th>Fixture</th><th>Score</th><th></th></tr></thead>
+            <tbody>
+              {knockouts.map((r) => (
+                <tr key={r.id}>
+                  <td style={{ textTransform: "capitalize" }}>{r.cup}</td>
+                  <td>{r.round}</td>
+                  <td>{r.gw}</td>
+                  <td>{entryLabel(r.entry_id_1)} vs {entryLabel(r.entry_id_2)}</td>
+                  <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <button onClick={() => startEditKo(r)}>Edit</button>{" "}
+                    <button onClick={() => deleteKnockout(r)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="card">
@@ -327,7 +564,8 @@ export default function Admin() {
           </select>
           <input placeholder="Paid to (admin name)" value={regPaidTo} onChange={(e) => setRegPaidTo(e.target.value)} />
         </div>
-        <button onClick={saveRegistration}>Save registration</button>
+        <button onClick={saveRegistration}>{regId ? "Update registration" : "Save registration"}</button>
+        {regId && <button onClick={clearRegForm} style={{ marginLeft: 8 }}>Cancel edit</button>}
 
         <div style={{ marginTop: 18, borderTop: "0.5px solid var(--border)", paddingTop: 14 }}>
           <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>All registrations ({registrations.length})</p>
@@ -335,7 +573,7 @@ export default function Admin() {
             <p className="muted">No registrations saved yet.</p>
           ) : (
             <table>
-              <thead><tr><th>Manager</th><th>Team</th><th>Phone</th><th>Amount</th><th>Paid to</th></tr></thead>
+              <thead><tr><th>Manager</th><th>Team</th><th>Phone</th><th>Amount</th><th>Paid to</th><th></th></tr></thead>
               <tbody>
                 {registrations.map((r) => (
                   <tr key={r.id}>
@@ -344,6 +582,10 @@ export default function Admin() {
                     <td>{r.phone}</td>
                     <td>{r.currency === "USD" ? "$" : "₹"}{r.amount}</td>
                     <td>{r.paid_to}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <button onClick={() => startEditReg(r)}>Edit</button>{" "}
+                      <button onClick={() => deleteRegistration(r)}>Delete</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -353,12 +595,25 @@ export default function Admin() {
       </div>
 
       <div className="card">
-        <h2>Record LMS rebuy</h2>
-        <input placeholder="Entry ID" value={entryId} onChange={(e) => setEntryId(e.target.value)} style={{ width: 160 }} />
-        {" "}
-        <input placeholder="Team name" value={entryName} onChange={(e) => setEntryName(e.target.value)} />
+        <h2>LMS rebuy</h2>
+        <select value={rebuyEntry} onChange={(e) => setRebuyEntry(e.target.value)} style={{ minWidth: 240 }}>{teamOptions}</select>
         {" "}
         <button onClick={saveRebuy}>Mark ₹500 paid</button>
+
+        {rebuys.length > 0 && (
+          <table style={{ marginTop: 14 }}>
+            <thead><tr><th>Team</th><th>Paid?</th><th></th></tr></thead>
+            <tbody>
+              {rebuys.map((r) => (
+                <tr key={r.entry_id}>
+                  <td>{r.entry_name}</td>
+                  <td>{r.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Unpaid</span>}</td>
+                  <td><button onClick={() => deleteRebuy(r)}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="card" style={{ borderColor: "var(--border-strong)" }}>
@@ -409,28 +664,6 @@ export default function Admin() {
                   <td>{p.assigned_admin || "—"}</td>
                   <td>{p.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Owed</span>}</td>
                   <td>{!p.paid && <button onClick={() => markPayoutPaid(p)}>Mark paid</button>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="card">
-        <h2>Activity log</h2>
-        <p className="muted">Persistent record of every admin action - survives a refresh, unlike a browser-only log.</p>
-        {logs.length === 0 ? (
-          <p className="muted">No activity recorded yet.</p>
-        ) : (
-          <table>
-            <thead><tr><th>When</th><th>Action</th><th>Summary</th><th>Result</th></tr></thead>
-            <tbody>
-              {logs.map((l) => (
-                <tr key={l.id}>
-                  <td style={{ whiteSpace: "nowrap" }}>{new Date(l.created_at).toLocaleString()}</td>
-                  <td>{l.action}</td>
-                  <td>{l.summary}</td>
-                  <td>{l.success ? <span className="pill alive">OK</span> : <span className="pill out">Failed</span>}</td>
                 </tr>
               ))}
             </tbody>

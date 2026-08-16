@@ -62,49 +62,68 @@ scores are confirmed final.
 
 ## Honest QA note
 
-This build has had a thorough **code-level review pass** - every admin form
-now validates input before submission (specific error dialogs, not silent
-acceptance), every admin API route double-checks that validation server-side
-too, every admin action writes to a persistent `admin_activity_log` table,
-and every public page (Classic, H2H, LMS, Prizes) has a proper loading state,
-error state with a Retry button, and an empty state when there's genuinely no
-data yet.
+Same caveat as before, worth repeating: I have not run this app. No network
+access in my environment means no `npm install`, no build, no clicking
+through it. This is a careful code-level review and defensive coding pass,
+not verified execution. Test the following yourself once it's deployed:
+- Every admin form with deliberately bad input (letters in a GW field, the
+  same team picked twice in an H2H fixture) - confirm the error dialog is
+  accurate and nothing bad reaches the database.
+- Add, edit, and delete a registration, a rebuy, and a knockout result -
+  confirm each shows up / disappears correctly without a page refresh.
+- Add a Mega GW for a future gameweek, confirm it shows "Upcoming" on
+  Prizes; once that GW is actually played, refresh and confirm a winner
+  appears automatically.
+- Run the Def+GK and Captain accuracy checks for one gameweek and sanity-
+  check the numbers against what the FPL app shows for a manager you know.
+- Hit "Export to Excel" from Admin and confirm every sheet has real data
+  once the league has some.
 
-What this does **not** mean: I have not run this app. My environment has no
-network access, so I can't `npm install`, build it, or click through it
-myself. This is careful reading and defensive coding, not verified execution.
-Test the following yourself before trusting it fully:
-- Submit each admin form with obviously bad input (letters in a GW field, a
-  duplicate entry ID in the H2H form, an empty phone number) and confirm the
-  error dialog is accurate and the bad data never reaches the database.
-- Submit a registration and confirm it appears in the "All registrations"
-  list on the same page without a refresh.
-- Run LMS elimination for a GW that hasn't started yet and confirm you get a
-  clear "no score recorded yet" error, not a crash.
+## What changed in this pass
 
-## What's new in this pass
+- **Real bug fix**: Rank Jump and Comeback King were using each manager's
+  *global* FPL rank (their position among millions of players worldwide),
+  not their rank inside this mini-league. Both now reconstruct mini-league
+  rank at any past gameweek directly from history data - correct, and no
+  fragile "capture a live snapshot at GW19" mechanism needed.
+- **Live prizes newly wired up** (the calculation logic already existed in
+  most cases, it just wasn't connected to a page): Manager of the Month,
+  Highest Rank Jump, Least Transfer Cost, Comeback King, Wildcard Vision.
+- **Mega GW**, fully built: admin marks which gameweeks count, winners are
+  calculated automatically from the same cheap history data other live
+  prizes use - no per-GW admin action needed once marked.
+- **Def+GK** and **Captain Points**, built going-forward-only per your
+  call - admin-triggered per gameweek, not backfilled.
+- **Dropdowns instead of typed Entry IDs** everywhere in Admin - pulled
+  live from the classic league standings. This is almost certainly what
+  was breaking the H2H knockout and rebuy forms before: a mistyped ID
+  fails validation silently from the user's perspective.
+- **Edit and delete** on registrations, rebuys, and knockout results.
+- **Refresh button** on Admin - reloads everything without re-entering
+  the password.
+- **Compact activity log** - a short "recent activity" strip always shown,
+  full table only appears if there's enough history to be worth expanding.
+- **Set Rules month calendar** now computed live from FPL's actual
+  gameweek deadline dates, not a hand-typed table - stays correct even if
+  fixtures move.
+- **Team crest grid** fixed to a clean 10-and-10 layout.
+- **Classic League page** no longer shows a raw external league name -
+  replaced with a "Currently leading" spotlight card.
+- **Logo**: still a placeholder lightning bolt (the official Premier
+  League crest can't be used as this app's own branding - trademark, not
+  a style choice). Drop your own image at `public/logo.png` once you have
+  it and it swaps in automatically, no code change needed.
+- **Excel export**: one-way "Export to Excel" button in Admin, pulling
+  every live prize, registrations, and finance data into a multi-sheet
+  workbook. Two-way sync is a separate, bigger piece for later.
+- Every prize description and page hero rewritten for clarity and tone.
 
-- **Single admin gate** - one password unlocks LMS, captaincy, H2H
-  knockout, registrations, and Finance together. No separate finance login.
-- **Persistent activity log** (`admin_activity_log` table) - survives a
-  refresh, separate section from the action forms themselves.
-- **Real form validation** (`lib/validation.js`) - every admin form checks
-  its inputs and shows a specific, actionable error dialog before calling
-  the API. Every admin API route repeats the same validation server-side,
-  since client-side validation alone can always be bypassed.
-- **Registrations are now visible** - the bug where saved registrations
-  never appeared anywhere is fixed; there's a live list on the admin page.
-- **Complete prize catalog** (`lib/prizeCatalog.js`) - every prize from the
-  rules doc is listed on `/prizes` now, including the ones not yet
-  calculated, each with a status badge (Live / Admin-updated / Not yet
-  tracked) and a hover tooltip with the exact rule text.
-- **`/rules` page** - the Set Rules tie-break order and month→GW calendar,
-  taken directly from your rules doc.
-- **Team crests on the homepage** - all 20 Premier League clubs, images
-  loaded directly from the Premier League's own CDN (not redrawn or stored
-  by this app), with a text-initial fallback if an image fails to load.
-- **Visual overhaul** - purple/gold theme matching your season poster,
-  gradient hero headers, better tables and cards throughout.
+## Still not built
+
+Wildcard Vision, Team Value, and the chip prizes are fully live. Everything
+else marked "Not yet tracked" on the Prizes page is genuinely not built -
+check that page directly for the current honest list rather than trusting
+this README to stay perfectly in sync with the code.
 
 ### 1. Database — Supabase (free tier)
 1. Go to supabase.com → New project (free tier).

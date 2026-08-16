@@ -24,11 +24,13 @@ export default function Home() {
 
   useEffect(load, []);
 
+  const leader = data && data.standings.length > 0 ? data.standings[0] : null;
+
   return (
     <div className="container">
       <div className="hero">
         <h1>Classic League</h1>
-        <p>Season-long standings, updated live from the official FPL API. Highest overall score at the end of the season wins - top 8 places are paid, ties are resolved using Set Rules.</p>
+        <p>Season-long standings, pulled live from the official FPL API. Highest overall score at the end of the season wins - top 8 places are paid, ties are resolved using Set Rules.</p>
       </div>
 
       <TeamCrests teams={teams} />
@@ -42,11 +44,24 @@ export default function Home() {
 
       {loading && !error && <div className="card muted">Loading standings…</div>}
 
+      {leader && (
+        <div className="card" style={{ borderColor: "var(--accent-bright)" }}>
+          <h2>Currently leading</h2>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 26, fontWeight: 700 }}>{leader.managerName}</span>
+            <span className="muted">{leader.entryName}</span>
+            <span style={{ marginLeft: "auto", fontSize: 22, fontWeight: 700, color: "var(--accent-bright)" }}>
+              {leader.totalPoints} pts
+            </span>
+          </div>
+        </div>
+      )}
+
       {data && !loading && (
         <div className="card">
-          <h2>{data.league.name}</h2>
+          <h2>Full standings</h2>
           {data.standings.length === 0 ? (
-            <p className="muted">No entries found for this league yet.</p>
+            <p className="muted">No entries found for this league yet - once your real league ID is set and managers join, they'll show up here.</p>
           ) : (
             <table>
               <thead>

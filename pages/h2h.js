@@ -25,11 +25,17 @@ export default function H2H() {
 
   useEffect(load, []);
 
+  const entryName = (id) => {
+    if (!data) return `Entry ${id}`;
+    const row = data.standings.find((s) => s.entry === id);
+    return row ? row.entryName : `Entry ${id}`;
+  };
+
   return (
     <div className="container">
       <div className="hero">
         <h1>Head-to-Head League</h1>
-        <p>Single H2H league through GW30, top 32 split into Gold (1-16) and Silver (17-32) cups. Single-leg knockouts: R16 (GW32) → QF (GW34) → SF (GW36) → Final (GW38).</p>
+        <p>Every manager plays a group stage of 29 random fixtures through GW30. The top 32 split into a Gold Cup (ranks 1-16) and a Silver Cup (ranks 17-32), then straight knockout: Round of 16 at GW32, Quarter-Finals GW34, Semi-Finals GW36, both Finals on GW38.</p>
       </div>
 
       {error && (
@@ -100,7 +106,7 @@ export default function H2H() {
                           <tr key={r.id}>
                             <td>{ROUND_LABELS[r.round] || r.round}</td>
                             <td>{r.gw}</td>
-                            <td>{r.entry_id_1} vs {r.entry_id_2}</td>
+                            <td>{entryName(r.entry_id_1)} vs {entryName(r.entry_id_2)}</td>
                             <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
                           </tr>
                         ))}
