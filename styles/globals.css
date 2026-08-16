@@ -79,6 +79,13 @@ body {
   font-size: 13px;
   flex-shrink: 0;
 }
+.brand .crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .brand span.gold { color: var(--accent-bright); }
 
 .container {
