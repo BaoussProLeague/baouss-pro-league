@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAutoRefresh } from "../lib/useAutoRefresh";
 
 export default function Lms() {
   const [data, setData] = useState(null);
@@ -15,7 +16,7 @@ export default function Lms() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useAutoRefresh(load, 60000);
 
   return (
     <div className="container">

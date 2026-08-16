@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAutoRefresh } from "../lib/useAutoRefresh";
 
 const ROUND_LABELS = { r16: "Round of 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final" };
 
@@ -23,7 +24,7 @@ export default function H2H() {
       .catch(() => {});
   };
 
-  useEffect(load, []);
+  useAutoRefresh(load, 60000);
 
   const entryName = (id) => {
     if (!data) return `Entry ${id}`;
@@ -31,11 +32,25 @@ export default function H2H() {
     return row ? row.entryName : `Entry ${id}`;
   };
 
+  const h2hStage = (gw) => {
+    if (!gw) return null;
+    if (gw <= 30) return "Group stage";
+    if (gw <= 32) return "Round of 16";
+    if (gw <= 34) return "Quarter-Finals";
+    if (gw <= 36) return "Semi-Finals";
+    return "Finals";
+  };
+
   return (
     <div className="container">
       <div className="hero">
         <h1>Head-to-Head League</h1>
         <p>Every manager plays a group stage of 29 random fixtures through GW30. The top 32 split into a Gold Cup (ranks 1-16) and a Silver Cup (ranks 17-32), then straight knockout: Round of 16 at GW32, Quarter-Finals GW34, Semi-Finals GW36, both Finals on GW38.</p>
+        {data && data.currentGw && (
+          <p style={{ marginTop: 8 }}>
+            <span className="pill admin">Currently: {h2hStage(data.currentGw)}</span>
+          </p>
+        )}
       </div>
 
       {error && (

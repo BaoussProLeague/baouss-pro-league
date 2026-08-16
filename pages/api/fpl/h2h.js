@@ -7,10 +7,13 @@ export default async function handler(req, res) {
   }
   try {
     const { league, entries } = await fpl.allH2hEntries(leagueId);
+    const bootstrap = await fpl.bootstrap();
+    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
     const gold = entries.filter((e) => e.rank <= 16);
     const silver = entries.filter((e) => e.rank > 16 && e.rank <= 32);
     res.status(200).json({
       league: { id: league.id, name: league.name },
+      currentGw: currentEvent ? currentEvent.id : null,
       standings: entries.map((e) => ({
         entry: e.entry,
         entryName: e.entry_name,

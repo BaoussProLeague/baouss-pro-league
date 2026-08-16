@@ -172,6 +172,20 @@ export default function Admin() {
   }, [unlocked]);
 
   // ---------- LMS / Captaincy / Def+GK ----------
+  const runAllForGw = async () => {
+    const err = firstError([validateGw(gw)]);
+    if (err) return showError(err);
+    const result = await call("/api/admin/run-all-gw", { gw });
+    if (result) {
+      setDialog({
+        type: result.status === "ok" ? "success" : "warning",
+        title: result.status === "ok" ? "All three ran successfully" : "Ran with some issues",
+        message: result.messages.join("\n\n"),
+      });
+      loadLogs();
+    }
+  };
+
   const runLms = async () => {
     const err = firstError([validateGw(gw)]);
     if (err) return showError(err);
@@ -449,6 +463,14 @@ export default function Admin() {
           </table>
         </div>
       )}
+
+      <div className="card">
+        <h2>Run everything for a gameweek</h2>
+        <p className="muted">Runs LMS, Captain accuracy, and Def+GK together for one GW - the individual buttons below still exist if you only want one of them.</p>
+        <input placeholder="Gameweek (1-38)" value={gw} onChange={(e) => setGw(e.target.value)} style={{ width: 160 }} />
+        {" "}
+        <button onClick={runAllForGw}>Run all for this GW</button>
+      </div>
 
       <div className="card">
         <h2>Run LMS elimination</h2>

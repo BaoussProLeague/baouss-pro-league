@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAutoRefresh } from "../lib/useAutoRefresh";
 import InfoTip from "../components/InfoTip";
 import { PRIZE_CATALOG, statusLabel } from "../lib/prizeCatalog";
 
@@ -37,7 +38,7 @@ export default function Prizes() {
       .catch(() => {});
   };
 
-  useEffect(load, []);
+  useAutoRefresh(load, 60000);
 
   const rowsFor = (key) => {
     if (!data) return null;

@@ -34,7 +34,7 @@ export default function Dialog({ dialog, onClose }) {
           </span>
           <strong style={{ fontSize: 15 }}>{title || c.label}</strong>
         </div>
-        <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, margin: "0 0 16px" }}>{message}</p>
+        <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, margin: "0 0 16px", whiteSpace: "pre-line" }}>{message}</p>
         <button onClick={onClose} style={{ width: "100%" }}>Got it</button>
       </div>
     </div>
