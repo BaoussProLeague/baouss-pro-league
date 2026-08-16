@@ -11,7 +11,7 @@
   --muted: #a595c2;
   --muted-2: #7a6b98;
   --accent: #c9a15a;
-  --accent-bright: #F5E6C4;
+  --accent-bright: #E5C158;
   --purple: #963CFF;
   --purple-deep: #7A22A0;
   --success: #4ade80;
@@ -64,12 +64,12 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;                  /* Slighly wider gap for premium breathing room */
-  font-weight: 700;           /* Reduced from 800 for cleaner, high-end editorial look */
-  font-size: 19px;            /* Increased slightly from 17px to feel more commanding */
+  gap: 8px;
+  font-weight: 800;
+  font-size: 17px;
   margin-right: 20px;
   color: var(--text);
-  letter-spacing: -0.02em; 
+  letter-spacing: -0.01em;
 }
 .brand .crest {
   width: 28px; height: 28px;
@@ -86,11 +86,12 @@ body {
   border-radius: 50%;
 }
 
-.brand span.gold { 
-  color: var(--accent-bright); 
-  font-weight: 400;           /* High-contrast design pairing bold with light typography */
-  letter-spacing: 0.04em;     /* Adds high-end breathing room to the accent word */
-  opacity: 0.95;
+.brand span.gold { color: var(--accent-bright); }
+
+.container {
+  padding: 28px 24px 64px;
+  max-width: 1120px;
+  margin: 0 auto;
 }
 
 .hero {
