@@ -14,19 +14,14 @@ const links = [
 // Drop your own logo file at /public/logo.png and it swaps in
 // automatically here, with the lightning bolt as a fallback if the file
 // isn't there yet - no code changes needed when you're ready to add it.
+// See the exact prep spec in the chat message this shipped with -
+// square canvas, transparent background, subject filling most of the frame.
 function Crest() {
   const [failed, setFailed] = useState(false);
-  if (failed) return <span className="crest">⚡</span>;
+  if (failed) return <span className="crest fallback">⚡</span>;
   return (
     <span className="crest">
-      <img
-        src="/logo.png"
-        alt="Baouss Pro League"
-        width={20}
-        height={20}
-        style={{ objectFit: "contain" }}
-        onError={() => setFailed(true)}
-      />
+      <img src="/logo.png" alt="Baouss Pro League" onError={() => setFailed(true)} />
     </span>
   );
 }

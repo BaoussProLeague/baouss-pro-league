@@ -11,7 +11,7 @@
   --muted: #a595c2;
   --muted-2: #7a6b98;
   --accent: #c9a15a;
-  --accent-bright: #E5C158;
+  --accent-bright: #f0bb4a;
   --purple: #963CFF;
   --purple-deep: #7A22A0;
   --success: #4ade80;
@@ -72,20 +72,17 @@ body {
   letter-spacing: -0.01em;
 }
 .brand .crest {
-  width: 28px; height: 28px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--purple), var(--accent));
+  width: 26px; height: 26px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px;
+  font-size: 20px;
   flex-shrink: 0;
 }
-.brand .crest img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.brand .crest img { width: 100%; height: 100%; }
+.brand .crest.fallback {
   border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--accent));
+  font-size: 13px;
 }
-
 .brand span.gold { color: var(--accent-bright); }
 
 .container {

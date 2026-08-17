@@ -191,7 +191,7 @@ export default function Admin() {
     if (err) return showError(err);
     const result = await call("/api/admin/lms-run", { gw });
     if (result) {
-      showSuccess(result.status === "manual_action_required" || result.status === "no_action" ? result.message : `LMS elimination recorded for GW${gw}.`);
+      showSuccess(result.message || `LMS elimination recorded for GW${gw}.`);
       loadLogs();
     }
   };

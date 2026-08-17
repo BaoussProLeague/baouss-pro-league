@@ -55,16 +55,22 @@ export default function Lms() {
           <div className="card">
             <h2>Eliminated</h2>
             <table>
-              <thead><tr><th>GW Out</th><th>Team</th><th>Score</th><th>Rebuy Eligible</th><th>Rebought?</th></tr></thead>
+              <thead><tr><th>GW Out</th><th>Team</th><th>Score</th><th>How it was decided</th><th>Rebuy Eligible</th><th>Rebought?</th></tr></thead>
               <tbody>
                 {data.eliminations.map((e) => {
                   const rebuy = data.rebuys.find((r) => r.entry_id === e.entry_id);
                   const eligible = e.gw_eliminated <= 21;
+                  const tieLabel = !e.tie_broken_by
+                    ? "Clear lowest score"
+                    : e.tie_broken_by === "random_draw"
+                    ? `Random draw (tied with ${(e.tie_candidates || []).map((c) => c.entryName).join(", ")})`
+                    : `Tie broken by ${e.tie_broken_by.replace("_", " ")}`;
                   return (
                     <tr key={e.entry_id}>
                       <td>{e.gw_eliminated}</td>
                       <td>{e.entry_name}</td>
                       <td>{e.gw_score}</td>
+                      <td style={{ fontSize: 12.5, color: "var(--muted)" }}>{tieLabel}</td>
                       <td>{eligible ? "Yes" : "No"}</td>
                       <td>{rebuy && rebuy.paid ? "Yes (₹500 paid)" : "—"}</td>
                     </tr>

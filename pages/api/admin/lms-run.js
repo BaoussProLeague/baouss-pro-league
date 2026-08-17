@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     const result = await runLmsForGw(gwNum, round);
     await logAdminActivity("lms_elimination", result.message, { gw: gwNum }, result.ok);
     if (!result.ok) return res.status(400).json({ error: result.message });
-    if (result.status === "manual_action_required" || result.status === "no_action") {
-      return res.status(200).json({ status: result.status, message: result.message, candidates: result.data?.tied });
+    if (result.status === "no_action") {
+      return res.status(200).json({ status: result.status, message: result.message });
     }
-    res.status(200).json({ status: "ok", eliminated: result.data?.rows });
+    res.status(200).json({ status: "ok", eliminated: result.data?.rows, message: result.message });
   } catch (err) {
     await logAdminActivity("lms_elimination", `GW${gwNum}: failed - ${err.message}`, { gw: gwNum }, false);
     res.status(500).json({ error: `Couldn't run LMS elimination: ${err.message}` });

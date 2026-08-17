@@ -9,6 +9,8 @@ create table if not exists lms_eliminations (
   gw_eliminated int not null,
   gw_score int not null,              -- score that got them eliminated
   round int not null default 1,       -- 1 = original run, 2 = post-rebuy run (from GW25)
+  tie_broken_by text,                 -- null if no tie; else 'bench_points' | 'captain_points' | 'random_draw'
+  tie_candidates jsonb,               -- who else was tied, for a transparent audit trail on random draws
   created_at timestamptz default now(),
   unique (entry_id, round)
 );
@@ -139,12 +141,6 @@ create table if not exists admin_activity_log (
   success boolean not null default true,
   created_at timestamptz default now()
 );
-
--- =========================================================================
--- Mega GW - admin marks which gameweeks are official Mega GWs ahead of
--- time. The winner itself is computed live from history data, not stored
--- here - this table only holds which GWs count and their label/prize.
--- =========================================================================
 create table if not exists mega_gws (
   id bigint generated always as identity primary key,
   gw int not null unique,
