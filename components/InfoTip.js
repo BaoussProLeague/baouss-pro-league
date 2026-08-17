@@ -24,7 +24,7 @@ export default function InfoTip({ text }) {
             position: "absolute", bottom: "130%", left: "50%", transform: "translateX(-50%)",
             background: "var(--bg-elevated)", border: "1px solid var(--border-strong)",
             borderRadius: 10, padding: "10px 12px", fontSize: 12.5, lineHeight: 1.5,
-            color: "var(--text)", width: 240, zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            color: "var(--text)", width: "min(240px, 80vw)", zIndex: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
             fontWeight: 400, textTransform: "none", letterSpacing: "normal",
           }}
         >

@@ -191,3 +191,66 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-2); margin-bottom: 6px; }
 .stat .value { font-size: 24px; font-weight: 700; }
+
+/* =========================================================================
+   Mobile / tablet responsiveness
+   ========================================================================= */
+
+/* Tables: instead of squishing columns illegibly on a narrow screen, the
+   table becomes horizontally swipeable. Pure CSS, no JSX changes needed -
+   applies to every table on every page automatically. */
+table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+table thead, table tbody, table tr { display: table; width: 100%; table-layout: fixed; }
+
+/* Nav: horizontal scroll instead of wrapping into a messy multi-row block
+   on a phone-width screen. */
+@media (max-width: 720px) {
+  .nav {
+    padding: 12px 14px;
+    gap: 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav a { padding: 8px 12px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
+  .brand { font-size: 15px; margin-right: 10px; flex-shrink: 0; }
+}
+
+/* Layout, type scale, and spacing shrink down for phones and tablets. */
+@media (max-width: 640px) {
+  .container { padding: 16px 14px 48px; }
+  .hero h1 { font-size: 22px; }
+  .hero p { font-size: 13px; }
+  h1 { font-size: 19px; }
+  .card { padding: 16px 16px; margin-bottom: 14px; }
+  table { font-size: 12.5px; }
+  th, td { padding: 8px 8px; }
+  .stat .value { font-size: 19px; }
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* Forms: fixed pixel widths (set inline in Admin's inputs) get overridden
+   to full-width and stacked below this breakpoint. !important is
+   deliberate here - inline styles normally beat stylesheet rules, and
+   this is the one legitimate case where overriding that is the point. */
+@media (max-width: 640px) {
+  input, select {
+    width: 100% !important;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+  }
+  button { width: 100%; margin-bottom: 8px; }
+}
+
+/* Touch targets: keep every tappable control comfortably above the ~44px
+   minimum that's standard for phones, even where padding above is tight. */
+@media (max-width: 640px) {
+  .nav a, button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+}
