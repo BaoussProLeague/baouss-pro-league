@@ -42,19 +42,19 @@ export default function Lms() {
         <>
           <div className="card">
             <h2>Still Alive ({data.stillAliveCount})</h2>
-            <table>
+            <div className="table-scroll"><table>
               <thead><tr><th>Team</th><th>Status</th></tr></thead>
               <tbody>
                 {data.stillAlive.map((e) => (
                   <tr key={e.entry}><td>{e.entryName}</td><td><span className="pill alive">Alive</span></td></tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           <div className="card">
             <h2>Eliminated</h2>
-            <table>
+            <div className="table-scroll"><table>
               <thead><tr><th>GW Out</th><th>Team</th><th>Score</th><th>How it was decided</th><th>Rebuy Eligible</th><th>Rebought?</th></tr></thead>
               <tbody>
                 {data.eliminations.map((e) => {
@@ -77,7 +77,7 @@ export default function Lms() {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </>
       )}

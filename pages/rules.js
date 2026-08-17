@@ -47,14 +47,14 @@ export default function Rules() {
         )}
         {!months && !error && <p className="muted">Loading this season's schedule…</p>}
         {months && (
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>Month</th><th>Gameweeks</th></tr></thead>
             <tbody>
               {Object.entries(months).map(([m, gws]) => (
                 <tr key={m}><td>{m}</td><td>{gws.join(", ")}</td></tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

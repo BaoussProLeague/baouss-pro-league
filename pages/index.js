@@ -117,7 +117,7 @@ export default function Home() {
           {data.standings.length === 0 ? (
             <p className="muted">No entries found for this league yet - once your real league ID is set and managers join, they'll show up here.</p>
           ) : (
-            <table>
+            <div className="table-scroll"><table>
               <thead>
                 <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>Total Pts</th></tr>
               </thead>
@@ -132,7 +132,7 @@ export default function Home() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}

@@ -448,7 +448,7 @@ export default function Admin() {
       {showFullLog && logs.length > 5 && (
         <div className="card">
           <h2>Full activity log</h2>
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>When</th><th>Action</th><th>Summary</th><th>Result</th></tr></thead>
             <tbody>
               {logs.map((l) => (
@@ -460,7 +460,7 @@ export default function Admin() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -507,7 +507,7 @@ export default function Admin() {
         <button onClick={saveMegaGw}>Add Mega GW</button>
 
         {megaGws.length > 0 && (
-          <table style={{ marginTop: 14 }}>
+          <div className="table-scroll" style={{ marginTop: 14 }}><table>
             <thead><tr><th>GW</th><th>Label</th><th>Prize</th><th></th></tr></thead>
             <tbody>
               {megaGws.map((mg) => (
@@ -519,7 +519,7 @@ export default function Admin() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -549,7 +549,7 @@ export default function Admin() {
         {koId && <button onClick={clearKoForm} style={{ marginLeft: 8 }}>Cancel edit</button>}
 
         {knockouts.length > 0 && (
-          <table style={{ marginTop: 14 }}>
+          <div className="table-scroll" style={{ marginTop: 14 }}><table>
             <thead><tr><th>Cup</th><th>Round</th><th>GW</th><th>Fixture</th><th>Score</th><th></th></tr></thead>
             <tbody>
               {knockouts.map((r) => (
@@ -566,7 +566,7 @@ export default function Admin() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -594,7 +594,7 @@ export default function Admin() {
           {registrations.length === 0 ? (
             <p className="muted">No registrations saved yet.</p>
           ) : (
-            <table>
+            <div className="table-scroll"><table>
               <thead><tr><th>Manager</th><th>Team</th><th>Phone</th><th>Amount</th><th>Paid to</th><th></th></tr></thead>
               <tbody>
                 {registrations.map((r) => (
@@ -611,7 +611,7 @@ export default function Admin() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       </div>
@@ -623,7 +623,7 @@ export default function Admin() {
         <button onClick={saveRebuy}>Mark ₹500 paid</button>
 
         {rebuys.length > 0 && (
-          <table style={{ marginTop: 14 }}>
+          <div className="table-scroll" style={{ marginTop: 14 }}><table>
             <thead><tr><th>Team</th><th>Paid?</th><th></th></tr></thead>
             <tbody>
               {rebuys.map((r) => (
@@ -634,7 +634,7 @@ export default function Admin() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -675,7 +675,7 @@ export default function Admin() {
         </div>
 
         {finance && finance.payouts.length > 0 && (
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>Prize</th><th>Winner</th><th>Amount</th><th>Admin</th><th>Status</th><th></th></tr></thead>
             <tbody>
               {finance.payouts.map((p) => (
@@ -689,7 +689,7 @@ export default function Admin() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

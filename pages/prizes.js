@@ -85,7 +85,7 @@ export default function Prizes() {
             Mega GW results
             <InfoTip text="Specific gameweeks announced ahead of time where the highest net score wins, regardless of overall league position." />
           </h2>
-          <table>
+          <div className="table-scroll"><table>
             <thead><tr><th>GW</th><th>Label</th><th>Status</th><th>Winner</th><th>Score</th></tr></thead>
             <tbody>
               {megaGws.map((mg) => (
@@ -98,7 +98,7 @@ export default function Prizes() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -117,7 +117,7 @@ export default function Prizes() {
               </div>
 
               {rows && rows.length > 0 ? (
-                <table>
+                <div className="table-scroll"><table>
                   <tbody>
                     {rows.slice(0, 5).map((row, i) => (
                       <tr key={row.entry}>
@@ -126,7 +126,7 @@ export default function Prizes() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
               ) : (
                 <p className="muted">
                   {prize.status === "planned"

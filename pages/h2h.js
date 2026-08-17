@@ -67,31 +67,31 @@ export default function H2H() {
           <div className="grid">
             <div className="card">
               <h2>Gold Cup Qualifiers (Rank 1-16)</h2>
-              <table>
+              <div className="table-scroll"><table>
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
                   {data.cupQualification.gold.map((e) => (
                     <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
             <div className="card">
               <h2>Silver Cup Qualifiers (Rank 17-32)</h2>
-              <table>
+              <div className="table-scroll"><table>
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
                   {data.cupQualification.silver.map((e) => (
                     <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
 
           <div className="card">
             <h2>Full League Table</h2>
-            <table>
+            <div className="table-scroll"><table>
               <thead>
                 <tr><th>Rank</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
               </thead>
@@ -103,7 +103,7 @@ export default function H2H() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           {knockout && (knockout.gold.length > 0 || knockout.silver.length > 0) ? (
@@ -114,7 +114,7 @@ export default function H2H() {
                   {knockout[cup].length === 0 ? (
                     <p className="muted">No rounds recorded yet.</p>
                   ) : (
-                    <table>
+                    <div className="table-scroll"><table>
                       <thead><tr><th>Round</th><th>GW</th><th>Fixture</th><th>Score</th></tr></thead>
                       <tbody>
                         {knockout[cup].map((r) => (
@@ -126,7 +126,7 @@ export default function H2H() {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </table></div>
                   )}
                 </div>
               ))}

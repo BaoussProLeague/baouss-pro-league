@@ -46,9 +46,7 @@ body {
   z-index: 10;
   flex-wrap: wrap;
   align-items: center;
-}
-
-.nav a {
+}.nav a {
   color: var(--muted);
   text-decoration: none;
   padding: 9px 16px;
@@ -196,16 +194,37 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
    Mobile / tablet responsiveness
    ========================================================================= */
 
-/* Tables: instead of squishing columns illegibly on a narrow screen, the
-   table becomes horizontally swipeable. Pure CSS, no JSX changes needed -
-   applies to every table on every page automatically. */
-table {
-  display: block;
+/* Tables: the previous approach (display:block + width:100% on the inner
+   rows) was broken - forcing rows to 100% width while also disabling wrap
+   made long cell text visually overlap adjacent columns instead of
+   scrolling, which is worse than doing nothing. Correct technique: the
+   WRAPPER scrolls, the table itself is left free to size to its natural
+   content width so nothing has to overlap or get clipped. */
+.table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  margin: 0 -2px;
+  position: relative;
+}
+.table-scroll table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+}
+.table-scroll th, .table-scroll td {
   white-space: nowrap;
 }
-table thead, table tbody, table tr { display: table; width: 100%; table-layout: fixed; }
+/* Subtle fade on the trailing edge as a visual hint that there's more to
+   scroll - without this, a cut-off nav or table just looks broken rather
+   than swipeable. */
+.table-scroll::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 24px;
+  background: linear-gradient(90deg, transparent, var(--panel));
+  pointer-events: none;
+}
 
 /* Nav: horizontal scroll instead of wrapping into a messy multi-row block
    on a phone-width screen. */
@@ -217,8 +236,17 @@ table thead, table tbody, table tr { display: table; width: 100%; table-layout: 
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap;
     scrollbar-width: none;
+    position: sticky;
   }
   .nav::-webkit-scrollbar { display: none; }
+  .nav::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 28px;
+    background: linear-gradient(90deg, transparent, rgba(13, 7, 22, 0.95));
+    pointer-events: none;
+  }
   .nav a { padding: 8px 12px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
   .brand { font-size: 15px; margin-right: 10px; flex-shrink: 0; }
 }
