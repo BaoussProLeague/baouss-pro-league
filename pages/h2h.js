@@ -49,6 +49,11 @@ export default function H2H() {
         {data && data.currentGw && (
           <p style={{ marginTop: 8 }}>
             <span className="pill admin">Currently: {h2hStage(data.currentGw)}</span>
+            {data.groupStageOver && (
+              <span className="pill alive" style={{ marginLeft: 8 }}>
+                Group stage locked - final GW{data.groupStageSnapshotGw} standings
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -64,6 +69,12 @@ export default function H2H() {
 
       {data && (
         <>
+          {data.groupStageOver && (
+            <div className="card muted" style={{ borderColor: "var(--accent)" }}>
+              The group stage ended at GW{data.groupStageSnapshotGw}. Everything below is permanently frozen at that point - later gameweeks don't affect qualification anymore, even though FPL's own H2H league keeps scoring fixtures behind the scenes.
+            </div>
+          )}
+
           <div className="grid">
             <div className="card">
               <h2>Gold Cup Qualifiers (Rank 1-16)</h2>
@@ -78,27 +89,31 @@ export default function H2H() {
             </div>
             <div className="card">
               <h2>Silver Cup Qualifiers (Rank 17-32)</h2>
-              <div className="table-scroll"><table>
-                <thead><tr><th>Rank</th><th>Team</th></tr></thead>
-                <tbody>
-                  {data.cupQualification.silver.map((e) => (
-                    <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
-                  ))}
-                </tbody>
-              </table></div>
+              {data.cupQualification.silver.length === 0 ? (
+                <p className="muted">Fewer than 17 managers in the league - nobody qualifies for Silver yet.</p>
+              ) : (
+                <div className="table-scroll"><table>
+                  <thead><tr><th>Rank</th><th>Team</th></tr></thead>
+                  <tbody>
+                    {data.cupQualification.silver.map((e) => (
+                      <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
+                    ))}
+                  </tbody>
+                </table></div>
+              )}
             </div>
           </div>
 
           <div className="card">
-            <h2>Full League Table</h2>
+            <h2>{data.groupStageOver ? `Final Group Table (GW${data.groupStageSnapshotGw})` : "Group Table (live)"}</h2>
             <div className="table-scroll"><table>
               <thead>
-                <tr><th>Rank</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
+                <tr><th>Rank</th><th>Team</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
               </thead>
               <tbody>
                 {data.standings.map((row) => (
                   <tr key={row.entry}>
-                    <td>{row.rank}</td><td>{row.entryName}</td><td>{row.played}</td>
+                    <td>{row.rank}</td><td>{row.entryName}</td>
                     <td>{row.won}</td><td>{row.drawn}</td><td>{row.lost}</td><td><strong>{row.points}</strong></td>
                   </tr>
                 ))}
@@ -106,37 +121,34 @@ export default function H2H() {
             </table></div>
           </div>
 
-          {knockout && (knockout.gold.length > 0 || knockout.silver.length > 0) ? (
-            <div className="grid">
-              {["gold", "silver"].map((cup) => (
-                <div className="card" key={cup}>
-                  <h2>{cup === "gold" ? "Gold Cup" : "Silver Cup"} Bracket</h2>
-                  {knockout[cup].length === 0 ? (
-                    <p className="muted">No rounds recorded yet.</p>
-                  ) : (
-                    <div className="table-scroll"><table>
-                      <thead><tr><th>Round</th><th>GW</th><th>Fixture</th><th>Score</th></tr></thead>
-                      <tbody>
-                        {knockout[cup].map((r) => (
-                          <tr key={r.id}>
-                            <td>{ROUND_LABELS[r.round] || r.round}</td>
-                            <td>{r.gw}</td>
-                            <td>{entryName(r.entry_id_1)} vs {entryName(r.entry_id_2)}</td>
-                            <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table></div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="card muted">
-              No knockout rounds recorded yet. Admin enters each round's result once it's played -
-              FPL's H2H standings object only knows the group phase, not your custom Gold/Silver bracket.
-            </div>
-          )}
+          <div className="grid">
+            {["gold", "silver"].map((cup) => (
+              <div className="card" key={cup}>
+                <h2>{cup === "gold" ? "Gold Cup" : "Silver Cup"} Knockout Bracket</h2>
+                {!knockout || knockout[cup].length === 0 ? (
+                  <p className="muted">
+                    {data.groupStageOver
+                      ? "No rounds recorded yet - admin adds each fixture and result as the knockout progresses."
+                      : "Knockout fixtures open up once the group stage ends at GW30."}
+                  </p>
+                ) : (
+                  <div className="table-scroll"><table>
+                    <thead><tr><th>Round</th><th>GW</th><th>Fixture</th><th>Score</th></tr></thead>
+                    <tbody>
+                      {knockout[cup].map((r) => (
+                        <tr key={r.id}>
+                          <td>{ROUND_LABELS[r.round] || r.round}</td>
+                          <td>{r.gw}</td>
+                          <td>{entryName(r.entry_id_1)} vs {entryName(r.entry_id_2)}</td>
+                          <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table></div>
+                )}
+              </div>
+            ))}
+          </div>
         </>
       )}
     </div>

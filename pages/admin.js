@@ -10,6 +10,7 @@ export default function Admin() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [classicEntries, setClassicEntries] = useState([]);
+  const [h2hQualifiers, setH2hQualifiers] = useState({ gold: [], silver: [] });
 
   const [gw, setGw] = useState("");
   const [captaincyGw, setCaptaincyGw] = useState("");
@@ -60,8 +61,11 @@ export default function Admin() {
   const showSuccess = (message) => setDialog({ type: "success", title: "Saved", message });
 
   const entryLabel = (id) => {
-    const e = classicEntries.find((c) => c.entry === id);
-    return e ? `${e.managerName} (${e.entryName})` : `Entry ${id}`;
+    const inClassic = classicEntries.find((c) => c.entry === id);
+    if (inClassic) return `${inClassic.managerName} (${inClassic.entryName})`;
+    const inQualifiers = [...h2hQualifiers.gold, ...h2hQualifiers.silver].find((c) => c.entry === id);
+    if (inQualifiers) return inQualifiers.entryName;
+    return `Entry ${id}`;
   };
 
   const call = async (url, body) => {
@@ -90,6 +94,14 @@ export default function Admin() {
       if (!d.error) {
         setClassicEntries(d.standings.map((s) => ({ entry: s.entry, entryName: s.entryName, managerName: s.managerName })));
       }
+    } catch (e) {}
+  };
+
+  const loadH2hQualifiers = async () => {
+    try {
+      const res = await fetch("/api/fpl/h2h");
+      const d = await res.json();
+      if (!d.error) setH2hQualifiers(d.cupQualification);
     } catch (e) {}
   };
 
@@ -141,7 +153,7 @@ export default function Admin() {
 
   const refreshAll = async () => {
     setRefreshing(true);
-    await Promise.all([loadClassicEntries(), loadRegistrations(), loadRebuys(), loadKnockouts(), loadMegaGws(), loadLogs(), reloadFinance()]);
+    await Promise.all([loadClassicEntries(), loadH2hQualifiers(), loadRegistrations(), loadRebuys(), loadKnockouts(), loadMegaGws(), loadLogs(), reloadFinance()]);
     setRefreshing(false);
   };
 
@@ -390,6 +402,19 @@ export default function Admin() {
     </>
   );
 
+  // Only lets an admin pick teams that actually qualified for the
+  // selected cup - the previous free-text/any-team version is exactly
+  // what made it possible to record a fixture for a team that isn't in
+  // that bracket at all. Structurally impossible now, not just discouraged.
+  const cupTeamOptions = (cup) => (
+    <>
+      <option value="">Select a {cup === "gold" ? "Gold" : "Silver"} Cup team…</option>
+      {h2hQualifiers[cup].map((e) => (
+        <option key={e.entry} value={e.entry}>{e.entryName} (rank {e.rank})</option>
+      ))}
+    </>
+  );
+
   if (!unlocked) {
     return (
       <div className="container">
@@ -525,9 +550,12 @@ export default function Admin() {
 
       <div className="card">
         <h2>H2H knockout results</h2>
-        <p className="muted">FPL doesn't know about your custom Gold/Silver bracket - enter each round's result once it's played.</p>
+        <p className="muted">FPL doesn't know about your custom Gold/Silver bracket - enter each round's result once it's played. Team dropdowns only show managers who actually qualified for the selected cup, so it's not possible to accidentally record a fixture for the wrong bracket.</p>
+        {h2hQualifiers.gold.length === 0 && h2hQualifiers.silver.length === 0 && (
+          <p className="error" style={{ marginBottom: 8 }}>No qualifiers yet - the group stage runs through GW30, so team lists here stay empty until then.</p>
+        )}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-          <select value={koCup} onChange={(e) => setKoCup(e.target.value)}>
+          <select value={koCup} onChange={(e) => { setKoCup(e.target.value); setKoEntry1(""); setKoEntry2(""); }}>
             <option value="gold">Gold Cup</option>
             <option value="silver">Silver Cup</option>
           </select>
@@ -540,9 +568,9 @@ export default function Admin() {
           <input placeholder="GW" value={koGw} onChange={(e) => setKoGw(e.target.value)} style={{ width: 80 }} />
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-          <select value={koEntry1} onChange={(e) => setKoEntry1(e.target.value)} style={{ minWidth: 200 }}>{teamOptions}</select>
+          <select value={koEntry1} onChange={(e) => setKoEntry1(e.target.value)} style={{ minWidth: 200 }}>{cupTeamOptions(koCup)}</select>
           <input placeholder="Score" value={koScore1} onChange={(e) => setKoScore1(e.target.value)} style={{ width: 90 }} />
-          <select value={koEntry2} onChange={(e) => setKoEntry2(e.target.value)} style={{ minWidth: 200 }}>{teamOptions}</select>
+          <select value={koEntry2} onChange={(e) => setKoEntry2(e.target.value)} style={{ minWidth: 200 }}>{cupTeamOptions(koCup)}</select>
           <input placeholder="Score" value={koScore2} onChange={(e) => setKoScore2(e.target.value)} style={{ width: 90 }} />
         </div>
         <button onClick={saveKnockout}>{koId ? "Update result" : "Save result"}</button>

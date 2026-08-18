@@ -67,24 +67,13 @@ export default function Home() {
 
       {loading && !error && <div className="card muted">Loading standings…</div>}
 
-      {leader && (
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginBottom: 18 }}>
-          <div className="stat"><div className="label">Gameweek</div><div className="value">{snapshot?.gw ?? "—"}</div></div>
-          <div className="stat"><div className="label">Managers</div><div className="value">{data.standings.length}</div></div>
-          <div className="stat" style={{ gridColumn: "span 2" }}>
-            <div className="label">Currently leading</div>
-            <div className="value" style={{ fontSize: 18 }}>{leader.managerName} <span style={{ color: "var(--accent-bright)" }}>· {leader.totalPoints} pts</span></div>
-          </div>
-        </div>
-      )}
-
       <div className="grid">
         <div className="card">
           <h2>{fixtures && fixtures.gwName ? fixtures.gwName : "This gameweek"} fixtures</h2>
           {!fixtures || fixtures.fixtures.length === 0 ? (
             <p className="muted">No fixtures found for this gameweek yet.</p>
           ) : (
-            <div>
+            <div style={{ maxHeight: 260, overflowY: "auto" }}>
               {fixtures.fixtures.map((f) => <FixtureRow key={f.id} fixture={f} />)}
             </div>
           )}
@@ -95,7 +84,7 @@ export default function Home() {
           {!table || table.length === 0 ? (
             <p className="muted">Table not available yet.</p>
           ) : (
-            <div className="table-scroll">
+            <div className="table-scroll" style={{ maxHeight: 260, overflowY: "auto" }}>
               <table>
                 <thead>
                   <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
@@ -118,6 +107,17 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {leader && (
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginBottom: 18 }}>
+          <div className="stat"><div className="label">Gameweek</div><div className="value">{snapshot?.gw ?? "—"}</div></div>
+          <div className="stat"><div className="label">Managers</div><div className="value">{data.standings.length}</div></div>
+          <div className="stat" style={{ gridColumn: "span 2" }}>
+            <div className="label">Currently leading</div>
+            <div className="value" style={{ fontSize: 18 }}>{leader.managerName} <span style={{ color: "var(--accent-bright)" }}>· {leader.totalPoints} pts</span></div>
+          </div>
+        </div>
+      )}
 
       {snapshot && snapshot.gw && (
         <div className="grid">

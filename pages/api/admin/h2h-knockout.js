@@ -1,5 +1,9 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { logAdminActivity } from "../../../lib/adminLog";
+import { fpl } from "../../../lib/fpl";
+import { computeH2hStandingsAtGw } from "../../../lib/prizes/h2hSnapshot";
+
+const GROUP_STAGE_LAST_GW = 30;
 
 // POST { password, action: 'add' | 'update' | 'delete', id, cup, round, gw, entryId1, entryId2, score1, score2, winnerEntryId }
 export default async function handler(req, res) {
@@ -31,6 +35,26 @@ export default async function handler(req, res) {
     }
     if (Number(entryId1) === Number(entryId2)) {
       return res.status(400).json({ error: "The two teams in a fixture can't be the same team." });
+    }
+
+    // Server-side qualifier check - the dropdown already only offers valid
+    // teams, but that's a UI convenience, not a guarantee. Anyone calling
+    // this API directly could bypass it, so the real rule lives here: a
+    // fixture can only be recorded between two teams that actually
+    // qualified for the cup it's being entered under.
+    const h2hLeagueId = process.env.FPL_H2H_LEAGUE_ID;
+    if (h2hLeagueId) {
+      const allMatches = await fpl.allH2hMatches(h2hLeagueId);
+      const ranked = computeH2hStandingsAtGw(allMatches, GROUP_STAGE_LAST_GW);
+      const cupIds = new Set(
+        (cup === "gold" ? ranked.slice(0, 16) : ranked.slice(16, 32)).map((r) => r.entry)
+      );
+      const bothQualify = cupIds.has(Number(entryId1)) && cupIds.has(Number(entryId2));
+      if (!bothQualify) {
+        return res.status(400).json({
+          error: `One or both selected teams did not qualify for the ${cup === "gold" ? "Gold" : "Silver"} Cup based on the GW${GROUP_STAGE_LAST_GW} group standings. Double-check the cup selection and team choices.`,
+        });
+      }
     }
 
     const row = {
