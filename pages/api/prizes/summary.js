@@ -33,7 +33,6 @@ export default async function handler(req, res) {
     res.status(200).json({
       teamValue: teamValue(histories),
       benchPoints: benchPoints(histories),
-      first999: firstToThreshold(histories, 999),
       first1499: firstToThreshold(histories, 1499),
       chips: chipPrizes(histories),
       wildcardVision: wildcardVision(histories),

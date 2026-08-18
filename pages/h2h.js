@@ -67,14 +67,14 @@ export default function H2H() {
 
       {loading && !error && <div className="card muted">Loading H2H standings…</div>}
 
-      {data && !data.hasStarted && (
-        <div className="card muted" style={{ borderColor: "var(--accent)" }}>
-          H2H standings will appear once scoring begins - this league's own FPL settings start H2H at GW2, so there's genuinely nothing to rank yet, regardless of how many managers have joined. Check back after GW2.
-        </div>
-      )}
-
-      {data && data.hasStarted && (
+      {data && (
         <>
+          {!data.hasStarted && (
+            <div className="card muted" style={{ borderColor: "var(--accent)", padding: "12px 20px" }}>
+              Scoring starts in GW2.
+            </div>
+          )}
+
           {data.groupStageOver && (
             <div className="card muted" style={{ borderColor: "var(--accent)" }}>
               The group stage ended at GW{data.groupStageSnapshotGw}. Everything below is permanently frozen at that point - later gameweeks don't affect qualification anymore, even though FPL's own H2H league keeps scoring fixtures behind the scenes.
@@ -84,6 +84,7 @@ export default function H2H() {
           <div className="grid">
             <div className="card">
               <h2>Gold Cup Qualifiers (Rank 1-16)</h2>
+              {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>}
               <div className="table-scroll"><table>
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
@@ -95,23 +96,25 @@ export default function H2H() {
             </div>
             <div className="card">
               <h2>Silver Cup Qualifiers (Rank 17-32)</h2>
-              {data.cupQualification.silver.length === 0 ? (
-                <p className="muted">Fewer than 17 managers have a ranked H2H record yet - Silver fills in as more matches are played.</p>
-              ) : (
-                <div className="table-scroll"><table>
-                  <thead><tr><th>Rank</th><th>Team</th></tr></thead>
-                  <tbody>
-                    {data.cupQualification.silver.map((e) => (
-                      <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
-                    ))}
-                  </tbody>
-                </table></div>
-              )}
+              {!data.hasStarted ? (
+                <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>
+              ) : data.cupQualification.silver.length === 0 ? (
+                <p className="muted" style={{ marginBottom: 10 }}>Fewer than 17 managers have a ranked H2H record yet - Silver fills in as more matches are played.</p>
+              ) : null}
+              <div className="table-scroll"><table>
+                <thead><tr><th>Rank</th><th>Team</th></tr></thead>
+                <tbody>
+                  {data.cupQualification.silver.map((e) => (
+                    <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
+                  ))}
+                </tbody>
+              </table></div>
             </div>
           </div>
 
           <div className="card">
             <h2>{data.groupStageOver ? `Final Group Table (GW${data.groupStageSnapshotGw})` : "Group Table (live)"}</h2>
+            {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>}
             <div className="table-scroll"><table>
               <thead>
                 <tr><th>Rank</th><th>Team</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>

@@ -44,7 +44,6 @@ export default function Prizes() {
     if (!data) return null;
     if (key === "teamValue") return data.teamValue.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `£${r.value.toFixed(1)}m` }));
     if (key === "benchPoints") return data.benchPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.benchPoints} pts` }));
-    if (key === "first999") return data.first999.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}` }));
     if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}` }));
     if (key === "leastTransferCost") return data.leastTransferCost.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `-${r.hitCost} pts` }));
     if (key === "wildcardVision") return data.wildcardVision.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.total} pts${r.complete ? "" : " (in progress)"}` }));

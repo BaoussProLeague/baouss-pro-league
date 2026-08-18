@@ -48,6 +48,8 @@ export default function Admin() {
   const [buyinInr, setBuyinInr] = useState("");
   const [buyinUsd, setBuyinUsd] = useState("");
   const [adminFeesInr, setAdminFeesInr] = useState("");
+  const [editingPayoutKey, setEditingPayoutKey] = useState(null);
+  const [editingPayoutPaid, setEditingPayoutPaid] = useState(false);
   const [prizeKey, setPrizeKey] = useState("");
   const [prizeLabel, setPrizeLabel] = useState("");
   const [winnerName, setWinnerName] = useState("");
@@ -365,18 +367,35 @@ export default function Admin() {
     });
     if (result) { showSuccess("Prize pool settings saved."); reloadFinance(); }
   };
+  const startEditPayout = (p) => {
+    setEditingPayoutKey(p.prize_key);
+    setEditingPayoutPaid(p.paid);
+    setPrizeKey(p.prize_key);
+    setPrizeLabel(p.prize_label);
+    setWinnerName(p.winner_name);
+    setAmount(String(p.amount));
+    setAssignedAdmin(p.assigned_admin || "");
+  };
+  const clearPayoutForm = () => {
+    setEditingPayoutKey(null); setEditingPayoutPaid(false);
+    setPrizeKey(""); setPrizeLabel(""); setWinnerName(""); setAmount(""); setAssignedAdmin("");
+  };
   const savePayout = async () => {
     const err = firstError([
       validateRequired(prizeKey, "Prize key"), validateRequired(prizeLabel, "Prize label"),
       validateRequired(winnerName, "Winner name"), validatePositiveNumber(amount, "Amount"),
     ]);
     if (err) return showError(err);
+    // Editing an already-paid entry must not silently reset it to unpaid -
+    // preserve whatever paid status it had unless the row's own "Mark
+    // paid" button is what triggered the change.
     const result = await call("/api/admin/finance", {
-      action: "upsertPayout", prizeKey, prizeLabel, winnerName, amount: Number(amount), assignedAdmin, paid: false,
+      action: "upsertPayout", prizeKey, prizeLabel, winnerName, amount: Number(amount), assignedAdmin,
+      paid: editingPayoutKey ? editingPayoutPaid : false,
     });
     if (result) {
-      showSuccess(`Payout entry saved for ${winnerName}.`);
-      setPrizeKey(""); setPrizeLabel(""); setWinnerName(""); setAmount(""); setAssignedAdmin("");
+      showSuccess(editingPayoutKey ? `Payout entry updated for ${winnerName}.` : `Payout entry saved for ${winnerName}.`);
+      clearPayoutForm();
       reloadFinance();
     }
   };
@@ -387,6 +406,14 @@ export default function Admin() {
       amount: p.amount, currency: p.currency, assignedAdmin: p.assigned_admin, paid: true,
     });
     if (result) { showSuccess(`Marked ${p.winner_name}'s payout as paid.`); reloadFinance(); }
+  };
+  const deletePayout = async (p) => {
+    const result = await call("/api/admin/finance", { action: "deletePayout", prizeKey: p.prize_key });
+    if (result) {
+      showSuccess(`Payout entry for ${p.winner_name} deleted.`);
+      if (editingPayoutKey === p.prize_key) clearPayoutForm();
+      reloadFinance();
+    }
   };
 
   const exportExcel = () => {
@@ -699,7 +726,8 @@ export default function Admin() {
             <input placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 100 }} />
             <input placeholder="Assigned admin" value={assignedAdmin} onChange={(e) => setAssignedAdmin(e.target.value)} />
           </div>
-          <button onClick={savePayout}>Save as unpaid</button>
+          <button onClick={savePayout}>{editingPayoutKey ? "Update payout" : "Save as unpaid"}</button>
+          {editingPayoutKey && <button onClick={clearPayoutForm} style={{ marginLeft: 8 }}>Cancel edit</button>}
         </div>
 
         {finance && finance.payouts.length > 0 && (
@@ -713,7 +741,11 @@ export default function Admin() {
                   <td>₹{Number(p.amount).toLocaleString()}</td>
                   <td>{p.assigned_admin || "—"}</td>
                   <td>{p.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Owed</span>}</td>
-                  <td>{!p.paid && <button onClick={() => markPayoutPaid(p)}>Mark paid</button>}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    {!p.paid && <button onClick={() => markPayoutPaid(p)}>Mark paid</button>}{" "}
+                    <button onClick={() => startEditPayout(p)}>Edit</button>{" "}
+                    <button onClick={() => deletePayout(p)}>Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

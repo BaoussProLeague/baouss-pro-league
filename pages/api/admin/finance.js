@@ -91,6 +91,15 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: "ok" });
       }
 
+      if (action === "deletePayout") {
+        const { prizeKey } = req.body;
+        if (!prizeKey) return res.status(400).json({ error: "prizeKey is required to delete a payout." });
+        const { error } = await supabaseAdmin.from("prize_payouts").delete().eq("prize_key", prizeKey);
+        if (error) throw error;
+        await logAdminActivity("finance_payout_deleted", `Payout "${prizeKey}" deleted`, { prizeKey }, true);
+        return res.status(200).json({ status: "ok" });
+      }
+
       res.status(400).json({ error: "Unknown action." });
     } catch (err) {
       await logAdminActivity("finance_action_failed", err.message, req.body, false);
