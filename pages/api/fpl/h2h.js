@@ -37,6 +37,11 @@ export default async function handler(req, res) {
       currentGw,
       groupStageOver,
       groupStageSnapshotGw: groupStageOver ? GROUP_STAGE_LAST_GW : null,
+      // If nobody's played a match yet, `ranked` is empty regardless of
+      // how many managers have joined - that's a "matches haven't
+      // started" state, not a manager-count problem, and the page should
+      // say so rather than guessing at a reason.
+      hasStarted: ranked.length > 0,
       standings: ranked.map((r, i) => ({
         entry: r.entry,
         entryName: r.entryName,

@@ -67,7 +67,13 @@ export default function H2H() {
 
       {loading && !error && <div className="card muted">Loading H2H standings…</div>}
 
-      {data && (
+      {data && !data.hasStarted && (
+        <div className="card muted" style={{ borderColor: "var(--accent)" }}>
+          H2H standings will appear once scoring begins - this league's own FPL settings start H2H at GW2, so there's genuinely nothing to rank yet, regardless of how many managers have joined. Check back after GW2.
+        </div>
+      )}
+
+      {data && data.hasStarted && (
         <>
           {data.groupStageOver && (
             <div className="card muted" style={{ borderColor: "var(--accent)" }}>
@@ -90,7 +96,7 @@ export default function H2H() {
             <div className="card">
               <h2>Silver Cup Qualifiers (Rank 17-32)</h2>
               {data.cupQualification.silver.length === 0 ? (
-                <p className="muted">Fewer than 17 managers in the league - nobody qualifies for Silver yet.</p>
+                <p className="muted">Fewer than 17 managers have a ranked H2H record yet - Silver fills in as more matches are played.</p>
               ) : (
                 <div className="table-scroll"><table>
                   <thead><tr><th>Rank</th><th>Team</th></tr></thead>

@@ -237,14 +237,6 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
     position: sticky;
   }
   .nav::-webkit-scrollbar { display: none; }
-  .nav::after {
-    content: "";
-    position: absolute;
-    top: 0; right: 0; bottom: 0;
-    width: 28px;
-    background: linear-gradient(90deg, transparent, rgba(13, 7, 22, 0.95));
-    pointer-events: none;
-  }
   .nav a { padding: 8px 12px; font-size: 12.5px; white-space: nowrap; flex-shrink: 0; }
   .brand { font-size: 15px; margin-right: 10px; flex-shrink: 0; }
 }
