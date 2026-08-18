@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
-import TeamCrests from "../components/TeamCrests";
+import FixtureRow from "../components/FixtureRow";
 
 const CHIP_LABELS = { wildcard: "Wildcards", freehit: "Free Hits", bboost: "Bench Boosts", "3xc": "Triple Captains" };
 
 export default function Home() {
   const [data, setData] = useState(null);
-  const [teams, setTeams] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
+  const [fixtures, setFixtures] = useState(null);
+  const [table, setTable] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -24,14 +25,19 @@ export default function Home() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
-    fetch("/api/fpl/bootstrap")
-      .then((r) => r.json())
-      .then((d) => !d.error && setTeams(d.teams))
-      .catch(() => {});
-
     fetch("/api/prizes/gw-snapshot")
       .then((r) => r.json())
       .then((d) => !d.error && setSnapshot(d))
+      .catch(() => {});
+
+    fetch("/api/fpl/fixtures")
+      .then((r) => r.json())
+      .then((d) => !d.error && setFixtures(d))
+      .catch(() => {});
+
+    fetch("/api/fpl/table")
+      .then((r) => r.json())
+      .then((d) => !d.error && setTable(d.table))
       .catch(() => {});
   };
 
@@ -52,8 +58,6 @@ export default function Home() {
         )}
       </div>
 
-      <TeamCrests teams={teams} />
-
       {error && (
         <div className="card error">
           <p style={{ marginBottom: 10 }}>Couldn't load standings: {error}</p>
@@ -73,6 +77,47 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <div className="grid">
+        <div className="card">
+          <h2>{fixtures && fixtures.gwName ? fixtures.gwName : "This gameweek"} fixtures</h2>
+          {!fixtures || fixtures.fixtures.length === 0 ? (
+            <p className="muted">No fixtures found for this gameweek yet.</p>
+          ) : (
+            <div>
+              {fixtures.fixtures.map((f) => <FixtureRow key={f.id} fixture={f} />)}
+            </div>
+          )}
+        </div>
+
+        <div className="card">
+          <h2>Premier League table</h2>
+          {!table || table.length === 0 ? (
+            <p className="muted">Table not available yet.</p>
+          ) : (
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
+                </thead>
+                <tbody>
+                  {table.map((t, i) => (
+                    <tr key={t.id}>
+                      <td>{i + 1}</td>
+                      <td>{t.shortName}</td>
+                      <td>{t.played}</td>
+                      <td>{t.win}</td>
+                      <td>{t.draw}</td>
+                      <td>{t.loss}</td>
+                      <td><strong>{t.points}</strong></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
 
       {snapshot && snapshot.gw && (
         <div className="grid">
@@ -117,22 +162,24 @@ export default function Home() {
           {data.standings.length === 0 ? (
             <p className="muted">No entries found for this league yet - once your real league ID is set and managers join, they'll show up here.</p>
           ) : (
-            <div className="table-scroll"><table>
-              <thead>
-                <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>Total Pts</th></tr>
-              </thead>
-              <tbody>
-                {data.standings.map((row) => (
-                  <tr key={row.entry}>
-                    <td>{row.rank}{row.lastRank && row.lastRank !== row.rank ? (row.rank < row.lastRank ? " ▲" : " ▼") : ""}</td>
-                    <td>{row.managerName}</td>
-                    <td>{row.entryName}</td>
-                    <td>{row.gwPoints}</td>
-                    <td><strong>{row.totalPoints}</strong></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>Total Pts</th></tr>
+                </thead>
+                <tbody>
+                  {data.standings.map((row) => (
+                    <tr key={row.entry}>
+                      <td>{row.rank}{row.lastRank && row.lastRank !== row.rank ? (row.rank < row.lastRank ? " ▲" : " ▼") : ""}</td>
+                      <td>{row.managerName}</td>
+                      <td>{row.entryName}</td>
+                      <td>{row.gwPoints}</td>
+                      <td><strong>{row.totalPoints}</strong></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
