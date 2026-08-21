@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import FixtureRow from "../components/FixtureRow";
 import TruncateText from "../components/TruncateText";
+import RankArrow from "../components/RankArrow";
 
 const CHIP_LABELS = { wildcard: "Wildcards", freehit: "Free Hits", bboost: "Bench Boosts", "3xc": "Triple Captains" };
 
@@ -174,7 +175,7 @@ export default function Home() {
                 <tbody>
                   {data.standings.map((row) => (
                     <tr key={row.entry}>
-                      <td>{row.rank}{row.lastRank && row.lastRank !== row.rank ? (row.rank < row.lastRank ? " ▲" : " ▼") : ""}</td>
+                      <td>{row.rank}<RankArrow delta={row.lastRank ? (row.rank < row.lastRank ? "up" : row.rank > row.lastRank ? "down" : "same") : null} /></td>
                       <td><TruncateText text={row.managerName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td><TruncateText text={row.entryName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td>{row.gwPoints}</td>

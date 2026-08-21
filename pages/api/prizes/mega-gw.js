@@ -16,8 +16,9 @@ export default async function handler(req, res) {
     const { entries } = await fpl.allClassicEntries(leagueId);
     const simpleEntries = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name }));
     const histories = await loadAllHistories(simpleEntries);
+    const bootstrap = await fpl.bootstrap();
 
-    res.status(200).json({ megaGws: megaGwResults(megaGws, histories) });
+    res.status(200).json({ megaGws: await megaGwResults(megaGws, histories, bootstrap.events, simpleEntries) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

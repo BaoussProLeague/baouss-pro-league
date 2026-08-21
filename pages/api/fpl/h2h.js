@@ -1,5 +1,6 @@
 import { fpl } from "../../../lib/fpl";
 import { computeH2hStandingsAtGw } from "../../../lib/prizes/h2hSnapshot";
+import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 
 const GROUP_STAGE_LAST_GW = 30;
 
@@ -15,19 +16,15 @@ export default async function handler(req, res) {
     const groupStageOver = currentGw > GROUP_STAGE_LAST_GW;
 
     const { league } = await fpl.allH2hEntries(leagueId);
+    const allMatches = await fpl.allH2hMatches(leagueId);
 
-    let ranked;
-    if (groupStageOver) {
-      // Frozen forever: reconstructed from full match history up to and
-      // including GW30, so later (irrelevant) fixtures can't drift it.
-      const allMatches = await fpl.allH2hMatches(leagueId);
-      ranked = computeH2hStandingsAtGw(allMatches, GROUP_STAGE_LAST_GW);
-    } else {
-      // Still live: same reconstruction, just up to the current gameweek,
-      // so it updates as the group stage progresses.
-      const allMatches = await fpl.allH2hMatches(leagueId);
-      ranked = computeH2hStandingsAtGw(allMatches, currentGw);
-    }
+    const uptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : currentGw;
+    const ranked = computeH2hStandingsAtGw(allMatches, uptoGw);
+    // Last week's standings, purely to diff against this week's for the
+    // rank-change arrows - frozen once the group stage itself is frozen.
+    const prevUptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : Math.max(1, currentGw - 1);
+    const rankedPrev = computeH2hStandingsAtGw(allMatches, prevUptoGw);
+    const deltas = computeRankDeltas(ranked, rankedPrev);
 
     const gold = ranked.slice(0, 16);
     const silver = ranked.slice(16, 32);
@@ -51,6 +48,7 @@ export default async function handler(req, res) {
         drawn: r.drawn,
         lost: r.lost,
         points: r.points,
+        delta: deltas.get(r.entry) ?? null,
       })),
       cupQualification: {
         gold: gold.map((r, i) => ({ entry: r.entry, entryName: r.entryName, rank: i + 1 })),

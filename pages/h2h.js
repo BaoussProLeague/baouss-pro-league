@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import TruncateText from "../components/TruncateText";
+import RankArrow from "../components/RankArrow";
 
 const ROUND_LABELS = { r16: "Round of 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final" };
 
@@ -8,6 +9,7 @@ export default function H2H() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [knockout, setKnockout] = useState(null);
+  const [matchups, setMatchups] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = () => {
@@ -22,6 +24,11 @@ export default function H2H() {
     fetch("/api/h2h/knockout")
       .then((r) => r.json())
       .then((d) => !d.error && setKnockout(d))
+      .catch(() => {});
+
+    fetch("/api/h2h/matchups")
+      .then((r) => r.json())
+      .then((d) => !d.error && setMatchups(d))
       .catch(() => {});
   };
 
@@ -82,6 +89,30 @@ export default function H2H() {
             </div>
           )}
 
+          {matchups && matchups.matchups && matchups.matchups.length > 0 && (
+            <div className="card">
+              <h2>GW{matchups.gw} matchups {matchups.status === "live" && <span className="pill alive" style={{ marginLeft: 8 }}>LIVE</span>}</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
+                {matchups.matchups.map((m, i) => {
+                  const p1 = m.entry1.points, p2 = m.entry2.points;
+                  const leading1 = p1 !== null && p2 !== null && p1 > p2;
+                  const leading2 = p1 !== null && p2 !== null && p2 > p1;
+                  return (
+                    <div key={i} style={{ background: "var(--bg-elevated)", borderRadius: 10, padding: "10px 14px", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontWeight: leading1 ? 700 : 400, color: leading1 ? "var(--accent-bright)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {m.entry1.name}
+                      </span>
+                      <span style={{ margin: "0 10px", fontWeight: 700, flexShrink: 0 }}>{p1 ?? "-"} : {p2 ?? "-"}</span>
+                      <span style={{ fontWeight: leading2 ? 700 : 400, color: leading2 ? "var(--accent-bright)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
+                        {m.entry2.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="grid">
             <div className="card">
               <h2>Gold Cup Qualifiers (Rank 1-16)</h2>
@@ -123,7 +154,7 @@ export default function H2H() {
               <tbody>
                 {data.standings.map((row) => (
                   <tr key={row.entry}>
-                    <td>{row.rank}</td><td><TruncateText text={row.entryName} maxWidth={160} href={`/team/${row.entry}`} /></td>
+                    <td>{row.rank}<RankArrow delta={row.delta} /></td><td><TruncateText text={row.entryName} maxWidth={160} href={`/team/${row.entry}`} /></td>
                     <td>{row.won}</td><td>{row.drawn}</td><td>{row.lost}</td><td><strong>{row.points}</strong></td>
                   </tr>
                 ))}

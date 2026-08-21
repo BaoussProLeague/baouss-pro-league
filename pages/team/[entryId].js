@@ -5,7 +5,7 @@ import Link from "next/link";
 const CHIP_LABELS = { wildcard: "Wildcard", freehit: "Free Hit", bboost: "Bench Boost", "3xc": "Triple Captain" };
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defenders", 3: "Midfielders", 4: "Forwards" };
 
-function Crest({ code, size = 18 }) {
+function Crest({ code, size = 16 }) {
   const [failed, setFailed] = useState(false);
   if (!code || failed) return null;
   return (
@@ -14,33 +14,78 @@ function Crest({ code, size = 18 }) {
       alt=""
       width={size}
       height={size}
-      style={{ objectFit: "contain", flexShrink: 0 }}
+      style={{ objectFit: "contain" }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// Real player photos from FPL's own CDN - same "reference the official
+// image, don't redraw it" approach already used for club crests. Falls
+// back to a plain initial badge if a specific player's photo 404s, which
+// happens occasionally for newer signings FPL hasn't uploaded yet.
+function PlayerPhoto({ photoCode, name }) {
+  const [failed, setFailed] = useState(false);
+  if (!photoCode || failed) {
+    return (
+      <div style={{
+        width: 44, height: 44, borderRadius: "50%", background: "var(--panel-hover)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 15, fontWeight: 700, color: "var(--muted)", margin: "0 auto",
+      }}>
+        {name ? name[0] : "?"}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={`https://resources.premierleague.com/premierleague25/photos/players/110x140/p${photoCode}.png`}
+      alt=""
+      width={44}
+      height={44}
+      style={{ objectFit: "cover", borderRadius: "50%", display: "block", margin: "0 auto" }}
       onError={() => setFailed(true)}
     />
   );
 }
 
 function PlayerCard({ p }) {
+  const pointsDisplay = p.fixture && !p.fixture.started
+    ? p.fixture.label
+    : `${p.livePoints}`;
+
   return (
-    <div
+    <Link
+      href={`/player/${p.elementId}`}
       style={{
         background: "var(--bg-elevated)",
         border: p.isCaptain ? "1px solid var(--accent-bright)" : "1px solid var(--border)",
         borderRadius: 10,
-        padding: "8px 10px",
-        minWidth: 92,
+        padding: "10px 6px 8px",
         textAlign: "center",
+        display: "block",
+        color: "inherit",
+        textDecoration: "none",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginBottom: 4 }}>
+      <div style={{ marginBottom: 4 }}>
         <Crest code={p.teamCode} />
-        {p.isCaptain && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-bright)" }}>(C)</span>}
-        {p.isViceCaptain && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>(VC)</span>}
       </div>
-      <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--accent-bright)", marginTop: 2 }}>{p.livePoints}</div>
-      {p.multiplier > 1 && <div style={{ fontSize: 9, color: "var(--muted-2)" }}>{p.basePoints} × {p.multiplier}</div>}
-    </div>
+      <PlayerPhoto photoCode={p.photoCode} name={p.name} />
+      <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {p.name}
+        {p.isCaptain && <span style={{ color: "var(--accent-bright)" }}> (C)</span>}
+        {p.isViceCaptain && <span style={{ color: "var(--muted)" }}> (VC)</span>}
+      </div>
+      <div style={{
+        fontSize: p.fixture && !p.fixture.started ? 11 : 15,
+        fontWeight: 700,
+        color: p.fixture && !p.fixture.started ? "var(--muted)" : "var(--accent-bright)",
+        marginTop: 3,
+      }}>
+        {pointsDisplay}
+      </div>
+    </Link>
   );
 }
 
@@ -71,6 +116,18 @@ export default function TeamView() {
 
   const byType = (list, type) => list.filter((p) => p.elementType === type);
 
+  // Fixed grid columns per row - the previous flex-wrap version let card
+  // widths vary just enough that rows wrapped unevenly (3 defenders on
+  // one line, 2+1 on the next). A grid with an explicit column count per
+  // position row is predictable regardless of how many players are in it.
+  const rowGrid = (count) => ({
+    display: "grid",
+    gridTemplateColumns: `repeat(${Math.min(count, 5)}, minmax(78px, 1fr))`,
+    gap: 8,
+    maxWidth: Math.min(count, 5) * 100,
+    margin: "0 auto",
+  });
+
   return (
     <div className="container">
       <div className="hero">
@@ -91,9 +148,7 @@ export default function TeamView() {
         <>
           <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div className="label" style={{ fontSize: 11, textTransform: "uppercase", color: "var(--muted-2)" }}>
-                {data.chip ? "Chip active" : "Live total"}
-              </div>
+              <div className="label" style={{ fontSize: 11, textTransform: "uppercase", color: "var(--muted-2)" }}>Live total</div>
               <div style={{ fontSize: 24, fontWeight: 700 }}>
                 {data.totalLivePoints} pts
                 {data.chip && <span className="pill admin" style={{ marginLeft: 10, fontSize: 12 }}>{CHIP_LABELS[data.chip] || data.chip}</span>}
@@ -117,8 +172,8 @@ export default function TeamView() {
               if (players.length === 0) return null;
               return (
                 <div key={type} style={{ marginBottom: 14 }}>
-                  <p style={{ fontSize: 11, color: "var(--muted-2)", textTransform: "uppercase", marginBottom: 8 }}>{TYPE_LABELS[type]}</p>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                  <p style={{ fontSize: 11, color: "var(--muted-2)", textTransform: "uppercase", marginBottom: 8, textAlign: "center" }}>{TYPE_LABELS[type]}</p>
+                  <div style={rowGrid(players.length)}>
                     {players.map((p) => <PlayerCard key={p.elementId} p={p} />)}
                   </div>
                 </div>
@@ -128,7 +183,7 @@ export default function TeamView() {
 
           <div className="card">
             <h2>Bench</h2>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={rowGrid(data.bench.length)}>
               {data.bench.map((p) => <PlayerCard key={p.elementId} p={p} />)}
             </div>
             {data.chip !== "bboost" && (

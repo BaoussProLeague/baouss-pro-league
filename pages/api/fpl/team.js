@@ -30,15 +30,27 @@ export default async function handler(req, res) {
       });
     }
 
-    const [entry, picksData, live] = await Promise.all([
+    const [entry, picksData, live, rawFixtures] = await Promise.all([
       fpl.entry(entryId),
       fpl.entryPicks(entryId, requestedGw),
       fpl.eventLive(requestedGw),
+      fpl.fixtures(requestedGw),
     ]);
 
     const elementsById = new Map(bootstrap.elements.map((el) => [el.id, el]));
     const teamsById = new Map(bootstrap.teams.map((t) => [t.id, t]));
     const livePointsById = new Map(live.elements.map((el) => [el.id, el.stats.total_points]));
+
+    // Maps each team to its opponent this GW, and whether that fixture has
+    // actually kicked off yet - lets a player show "vs OPP (H)" instead of
+    // a misleading "0" before their match has even started.
+    const teamFixture = new Map();
+    for (const f of rawFixtures) {
+      const homeTeam = teamsById.get(f.team_h);
+      const awayTeam = teamsById.get(f.team_a);
+      teamFixture.set(f.team_h, { opponent: awayTeam ? awayTeam.short_name : "TBC", isHome: true, started: f.started, finished: f.finished });
+      teamFixture.set(f.team_a, { opponent: homeTeam ? homeTeam.short_name : "TBC", isHome: false, started: f.started, finished: f.finished });
+    }
 
     const chip = picksData.active_chip; // 'wildcard' | 'freehit' | 'bboost' | '3xc' | null
     const benchBoostActive = chip === "bboost";
@@ -47,9 +59,11 @@ export default async function handler(req, res) {
       const el = elementsById.get(pick.element);
       const team = el ? teamsById.get(el.team) : null;
       const basePoints = livePointsById.get(pick.element) || 0;
+      const fixture = el ? teamFixture.get(el.team) : null;
       return {
         elementId: pick.element,
         name: el ? el.web_name : `Player ${pick.element}`,
+        photoCode: el && el.photo ? el.photo.replace(".jpg", "") : null,
         teamShort: team ? team.short_name : "",
         teamCode: team ? team.code : null,
         elementType: el ? el.element_type : null, // 1 GK, 2 DEF, 3 MID, 4 FWD
@@ -58,6 +72,9 @@ export default async function handler(req, res) {
         multiplier: pick.multiplier,
         basePoints,
         livePoints: basePoints * pick.multiplier,
+        fixture: fixture
+          ? { label: `${fixture.isHome ? "vs" : "@"} ${fixture.opponent}`, started: fixture.started, finished: fixture.finished }
+          : null,
       };
     };
 
