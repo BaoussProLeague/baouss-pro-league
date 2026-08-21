@@ -71,7 +71,7 @@ export default function Lms() {
                       <td>{e.gw_eliminated}</td>
                       <td><TruncateText text={e.entry_name} maxWidth={160} /></td>
                       <td>{e.gw_score}</td>
-                      <td style={{ fontSize: 12.5, color: "var(--muted)" }}>{tieLabel}</td>
+                      <td style={{ fontSize: 12.5, color: "var(--muted)" }}><TruncateText text={tieLabel} maxWidth={220} /></td>
                       <td>{eligible ? "Yes" : "No"}</td>
                       <td>{rebuy && rebuy.paid ? "Yes (₹500 paid)" : "—"}</td>
                     </tr>

@@ -213,19 +213,13 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .table-scroll th, .table-scroll td {
   white-space: nowrap;
-  overflow: hidden;
 }
-/* Subtle fade on the trailing edge as a visual hint that there's more to
-   scroll - without this, a cut-off nav or table just looks broken rather
-   than swipeable. */
-.table-scroll::after {
-  content: "";
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 24px;
-  background: linear-gradient(90deg, transparent, var(--panel));
-  pointer-events: none;
-}
+/* The trailing-edge fade hint was removed - it painted over the right
+   edge of every table unconditionally, regardless of whether that table
+   actually needed to scroll. Once names got proper truncation (see
+   TruncateText), most tables fit within the viewport without scrolling
+   at all, and the fade was left obscuring real content - the GW Pts /
+   Total Pts columns specifically, since those sit at the right edge. */
 
 /* Nav: horizontal scroll instead of wrapping into a messy multi-row block
    on a phone-width screen. */
