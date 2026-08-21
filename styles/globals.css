@@ -134,7 +134,9 @@ th {
   letter-spacing: 0.06em;
 }
 tbody tr { transition: background 0.12s ease; }
-tbody tr:hover td { background: rgba(150, 60, 255, 0.06); }
+@media (hover: hover) and (pointer: fine) {
+  tbody tr:hover td { background: rgba(150, 60, 255, 0.06); }
+}
 
 .pill {
   display: inline-block;
@@ -211,6 +213,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 .table-scroll th, .table-scroll td {
   white-space: nowrap;
+  overflow: hidden;
 }
 /* Subtle fade on the trailing edge as a visual hint that there's more to
    scroll - without this, a cut-off nav or table just looks broken rather

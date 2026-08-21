@@ -112,9 +112,12 @@ export default function Home() {
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", marginBottom: 18 }}>
           <div className="stat"><div className="label">Gameweek</div><div className="value">{snapshot?.gw ?? "—"}</div></div>
           <div className="stat"><div className="label">Managers</div><div className="value">{data.standings.length}</div></div>
-          <div className="stat" style={{ gridColumn: "span 2" }}>
+          <div className="stat" style={{ gridColumn: "span 2", minWidth: 0 }}>
             <div className="label">Currently leading</div>
-            <div className="value" style={{ fontSize: 18 }}>{leader.managerName} <span style={{ color: "var(--accent-bright)" }}>· {leader.totalPoints} pts</span></div>
+            <div className="value" style={{ fontSize: 18, display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{leader.managerName}</span>
+              <span style={{ color: "var(--accent-bright)", flexShrink: 0 }}>· {leader.totalPoints} pts</span>
+            </div>
           </div>
         </div>
       )}
