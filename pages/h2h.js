@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
+import TruncateText from "../components/TruncateText";
 
 const ROUND_LABELS = { r16: "Round of 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final" };
 
@@ -89,7 +90,7 @@ export default function H2H() {
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
                   {data.cupQualification.gold.map((e) => (
-                    <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
+                    <tr key={e.entry}><td>{e.rank}</td><td><TruncateText text={e.entryName} maxWidth={180} /></td></tr>
                   ))}
                 </tbody>
               </table></div>
@@ -105,7 +106,7 @@ export default function H2H() {
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
                   {data.cupQualification.silver.map((e) => (
-                    <tr key={e.entry}><td>{e.rank}</td><td>{e.entryName}</td></tr>
+                    <tr key={e.entry}><td>{e.rank}</td><td><TruncateText text={e.entryName} maxWidth={180} /></td></tr>
                   ))}
                 </tbody>
               </table></div>
@@ -122,7 +123,7 @@ export default function H2H() {
               <tbody>
                 {data.standings.map((row) => (
                   <tr key={row.entry}>
-                    <td>{row.rank}</td><td>{row.entryName}</td>
+                    <td>{row.rank}</td><td><TruncateText text={row.entryName} maxWidth={160} /></td>
                     <td>{row.won}</td><td>{row.drawn}</td><td>{row.lost}</td><td><strong>{row.points}</strong></td>
                   </tr>
                 ))}
@@ -148,7 +149,7 @@ export default function H2H() {
                         <tr key={r.id}>
                           <td>{ROUND_LABELS[r.round] || r.round}</td>
                           <td>{r.gw}</td>
-                          <td>{entryName(r.entry_id_1)} vs {entryName(r.entry_id_2)}</td>
+                          <td><TruncateText text={entryName(r.entry_id_1)} maxWidth={100} /> vs <TruncateText text={entryName(r.entry_id_2)} maxWidth={100} /></td>
                           <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
                         </tr>
                       ))}

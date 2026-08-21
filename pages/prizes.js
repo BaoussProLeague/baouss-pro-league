@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import InfoTip from "../components/InfoTip";
+import TruncateText from "../components/TruncateText";
 import { PRIZE_CATALOG, statusLabel } from "../lib/prizeCatalog";
 
 const CHIP_KEY_MAP = { wildcard: "wildcard", freehit: "freeHit", "3xc": "tripleCaptain", bboost: "benchBoost" };
@@ -90,9 +91,9 @@ export default function Prizes() {
               {megaGws.map((mg) => (
                 <tr key={mg.id}>
                   <td>{mg.gw}</td>
-                  <td>{mg.label}</td>
+                  <td><TruncateText text={mg.label} maxWidth={180} /></td>
                   <td>{mg.status === "completed" ? <span className="pill alive">Completed</span> : <span className="pill admin">Upcoming</span>}</td>
-                  <td>{mg.leaderboard[0] ? mg.leaderboard[0].entryName : "—"}</td>
+                  <td>{mg.leaderboard[0] ? <TruncateText text={mg.leaderboard[0].entryName} maxWidth={150} /> : "—"}</td>
                   <td>{mg.leaderboard[0] ? `${mg.leaderboard[0].points} pts` : "—"}</td>
                 </tr>
               ))}
@@ -120,7 +121,7 @@ export default function Prizes() {
                   <tbody>
                     {rows.slice(0, 5).map((row, i) => (
                       <tr key={row.entry}>
-                        <td>{i + 1}. {row.entryName}</td>
+                        <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} /></td>
                         <td style={{ textAlign: "right" }}>{row.display}</td>
                       </tr>
                     ))}

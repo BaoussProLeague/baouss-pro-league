@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
+import TruncateText from "../components/TruncateText";
 
 export default function Lms() {
   const [data, setData] = useState(null);
@@ -46,7 +47,7 @@ export default function Lms() {
               <thead><tr><th>Team</th><th>Status</th></tr></thead>
               <tbody>
                 {data.stillAlive.map((e) => (
-                  <tr key={e.entry}><td>{e.entryName}</td><td><span className="pill alive">Alive</span></td></tr>
+                  <tr key={e.entry}><td><TruncateText text={e.entryName} maxWidth={200} /></td><td><span className="pill alive">Alive</span></td></tr>
                 ))}
               </tbody>
             </table></div>
@@ -68,7 +69,7 @@ export default function Lms() {
                   return (
                     <tr key={e.entry_id}>
                       <td>{e.gw_eliminated}</td>
-                      <td>{e.entry_name}</td>
+                      <td><TruncateText text={e.entry_name} maxWidth={160} /></td>
                       <td>{e.gw_score}</td>
                       <td style={{ fontSize: 12.5, color: "var(--muted)" }}>{tieLabel}</td>
                       <td>{eligible ? "Yes" : "No"}</td>

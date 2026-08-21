@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Dialog from "../components/Dialog";
+import TruncateText from "../components/TruncateText";
 import { validateGw, validateRequired, validatePositiveNumber, validatePhone, firstError } from "../lib/validation";
 
 export default function Admin() {
@@ -565,7 +566,7 @@ export default function Admin() {
               {megaGws.map((mg) => (
                 <tr key={mg.id}>
                   <td>{mg.gw}</td>
-                  <td>{mg.label}</td>
+                  <td><TruncateText text={mg.label} maxWidth={200} /></td>
                   <td>{mg.prizeAmountInr ? `₹${mg.prizeAmountInr}` : "—"}</td>
                   <td><button onClick={() => deleteMegaGw(mg)}>Delete</button></td>
                 </tr>
@@ -612,7 +613,7 @@ export default function Admin() {
                   <td style={{ textTransform: "capitalize" }}>{r.cup}</td>
                   <td>{r.round}</td>
                   <td>{r.gw}</td>
-                  <td>{entryLabel(r.entry_id_1)} vs {entryLabel(r.entry_id_2)}</td>
+                  <td><TruncateText text={entryLabel(r.entry_id_1)} maxWidth={110} /> vs <TruncateText text={entryLabel(r.entry_id_2)} maxWidth={110} /></td>
                   <td>{r.score_1 ?? "—"} - {r.score_2 ?? "—"}</td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <button onClick={() => startEditKo(r)}>Edit</button>{" "}
@@ -654,8 +655,8 @@ export default function Admin() {
               <tbody>
                 {registrations.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.manager_name}</td>
-                    <td>{r.fpl_team_name}</td>
+                    <td><TruncateText text={r.manager_name} maxWidth={130} /></td>
+                    <td><TruncateText text={r.fpl_team_name} maxWidth={130} /></td>
                     <td>{r.phone}</td>
                     <td>{r.currency === "USD" ? "$" : "₹"}{r.amount}</td>
                     <td>{r.paid_to}</td>
@@ -683,7 +684,7 @@ export default function Admin() {
             <tbody>
               {rebuys.map((r) => (
                 <tr key={r.entry_id}>
-                  <td>{r.entry_name}</td>
+                  <td><TruncateText text={r.entry_name} maxWidth={180} /></td>
                   <td>{r.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Unpaid</span>}</td>
                   <td><button onClick={() => deleteRebuy(r)}>Delete</button></td>
                 </tr>
@@ -736,8 +737,8 @@ export default function Admin() {
             <tbody>
               {finance.payouts.map((p) => (
                 <tr key={p.id}>
-                  <td>{p.prize_label}</td>
-                  <td>{p.winner_name}</td>
+                  <td><TruncateText text={p.prize_label} maxWidth={150} /></td>
+                  <td><TruncateText text={p.winner_name} maxWidth={130} /></td>
                   <td>₹{Number(p.amount).toLocaleString()}</td>
                   <td>{p.assigned_admin || "—"}</td>
                   <td>{p.paid ? <span className="pill alive">Paid</span> : <span className="pill out">Owed</span>}</td>
