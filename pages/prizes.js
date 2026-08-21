@@ -93,7 +93,7 @@ export default function Prizes() {
                   <td>{mg.gw}</td>
                   <td><TruncateText text={mg.label} maxWidth={180} /></td>
                   <td>{mg.status === "completed" ? <span className="pill alive">Completed</span> : <span className="pill admin">Upcoming</span>}</td>
-                  <td>{mg.leaderboard[0] ? <TruncateText text={mg.leaderboard[0].entryName} maxWidth={150} /> : "—"}</td>
+                  <td>{mg.leaderboard[0] ? <TruncateText text={mg.leaderboard[0].entryName} maxWidth={150} href={`/team/${mg.leaderboard[0].entry}`} /> : "—"}</td>
                   <td>{mg.leaderboard[0] ? `${mg.leaderboard[0].points} pts` : "—"}</td>
                 </tr>
               ))}
@@ -121,7 +121,7 @@ export default function Prizes() {
                   <tbody>
                     {rows.slice(0, 5).map((row, i) => (
                       <tr key={row.entry}>
-                        <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} /></td>
+                        <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} href={`/team/${row.entry}`} /></td>
                         <td style={{ textAlign: "right" }}>{row.display}</td>
                       </tr>
                     ))}

@@ -175,8 +175,8 @@ export default function Home() {
                   {data.standings.map((row) => (
                     <tr key={row.entry}>
                       <td>{row.rank}{row.lastRank && row.lastRank !== row.rank ? (row.rank < row.lastRank ? " ▲" : " ▼") : ""}</td>
-                      <td><TruncateText text={row.managerName} maxWidth={140} /></td>
-                      <td><TruncateText text={row.entryName} maxWidth={140} /></td>
+                      <td><TruncateText text={row.managerName} maxWidth={140} href={`/team/${row.entry}`} /></td>
+                      <td><TruncateText text={row.entryName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td>{row.gwPoints}</td>
                       <td><strong>{row.totalPoints}</strong></td>
                     </tr>

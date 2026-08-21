@@ -47,7 +47,7 @@ export default function Lms() {
               <thead><tr><th>Team</th><th>Status</th></tr></thead>
               <tbody>
                 {data.stillAlive.map((e) => (
-                  <tr key={e.entry}><td><TruncateText text={e.entryName} maxWidth={200} /></td><td><span className="pill alive">Alive</span></td></tr>
+                  <tr key={e.entry}><td><TruncateText text={e.entryName} maxWidth={200} href={`/team/${e.entry}`} /></td><td><span className="pill alive">Alive</span></td></tr>
                 ))}
               </tbody>
             </table></div>
@@ -69,7 +69,7 @@ export default function Lms() {
                   return (
                     <tr key={e.entry_id}>
                       <td>{e.gw_eliminated}</td>
-                      <td><TruncateText text={e.entry_name} maxWidth={160} /></td>
+                      <td><TruncateText text={e.entry_name} maxWidth={160} href={`/team/${e.entry_id}`} /></td>
                       <td>{e.gw_score}</td>
                       <td style={{ fontSize: 12.5, color: "var(--muted)" }}><TruncateText text={tieLabel} maxWidth={220} /></td>
                       <td>{eligible ? "Yes" : "No"}</td>
