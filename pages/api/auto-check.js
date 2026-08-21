@@ -1,4 +1,4 @@
-import { checkAndRunPendingJobs } from "../../../lib/jobs/checkAndRun";
+import { checkAndRunPendingJobs } from "../../lib/jobs/checkAndRun";
 
 // No auth on this one deliberately - it's meant to be called by any
 // visitor's browser as a background side effect of loading the site.
