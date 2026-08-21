@@ -39,7 +39,7 @@ function PlayerPhoto({ photoCode, name }) {
   }
   return (
     <img
-      src={`https://resources.premierleague.com/premierleague25/photos/players/110x140/p${photoCode}.png`}
+      src={`https://resources.premierleague.com/premierleague26/photos/players/110x140/${photoCode}.png`}
       alt=""
       width={44}
       height={44}

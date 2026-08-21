@@ -1,8 +1,10 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { defGkLeaderboard } from "../../../lib/prizes/defgk";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const { data, error } = await supabaseAdmin.from("def_gk_points_log").select("*");
     if (error) throw error;

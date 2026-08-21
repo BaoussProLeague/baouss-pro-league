@@ -45,7 +45,7 @@ export default function PlayerDetail() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {data.photoCode && (
             <img
-              src={`https://resources.premierleague.com/premierleague25/photos/players/110x140/p${data.photoCode}.png`}
+              src={`https://resources.premierleague.com/premierleague26/photos/players/110x140/${data.photoCode}.png`}
               alt="" width={64} height={64} style={{ borderRadius: "50%", objectFit: "cover" }}
             />
           )}

@@ -7,8 +7,10 @@ import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
 import { getLiveGwScores, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const leagueId = process.env.FPL_CLASSIC_LEAGUE_ID;
     const { entries } = await fpl.allClassicEntries(leagueId);

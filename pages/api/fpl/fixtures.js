@@ -1,4 +1,5 @@
 import { fpl } from "../../../lib/fpl";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 // Pulls goal scorers and bonus points (BPS-based) out of a fixture's raw
 // `stats` array. FPL structures this as one entry per stat type, each with
@@ -61,6 +62,7 @@ function extractStats(fixtureStats, elementsById) {
 }
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const bootstrap = await fpl.bootstrap();
     const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);

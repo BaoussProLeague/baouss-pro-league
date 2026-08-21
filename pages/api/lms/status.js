@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { fpl } from "../../../lib/fpl";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 // Returns: who is still alive, who's eliminated (and when), who's rebought.
 // This reads state Supabase already has - it does NOT run the elimination
@@ -8,6 +9,7 @@ import { fpl } from "../../../lib/fpl";
 // final - GW scores can still shift with late bonus points / VAR-style
 // corrections for a day or two after the deadline).
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const leagueId = process.env.FPL_CLASSIC_LEAGUE_ID;
     const { entries } = await fpl.allClassicEntries(leagueId);

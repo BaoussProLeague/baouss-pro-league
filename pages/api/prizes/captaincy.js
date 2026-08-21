@@ -2,8 +2,10 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { captaincyLeaderboard } from "../../../lib/prizes/captaincy";
 import { captainPointsLeaderboard } from "../../../lib/prizes/fromHistory";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const { data, error } = await supabaseAdmin.from("captain_accuracy").select("*");
     if (error) throw error;

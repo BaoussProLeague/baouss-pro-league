@@ -1,6 +1,8 @@
 import { fpl } from "../../../lib/fpl";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const data = await fpl.bootstrap();
     const currentEvent = data.events.find((e) => e.is_current) || data.events.find((e) => e.is_next);

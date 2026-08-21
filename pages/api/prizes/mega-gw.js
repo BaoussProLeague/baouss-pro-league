@@ -2,8 +2,10 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { fpl } from "../../../lib/fpl";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { megaGwResults } from "../../../lib/prizes/megaGw";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const { data: megaGws, error } = await supabaseAdmin.from("mega_gws").select("*").order("gw", { ascending: true });
     if (error) throw error;

@@ -91,21 +91,43 @@ export default function H2H() {
 
           {matchups && matchups.matchups && matchups.matchups.length > 0 && (
             <div className="card">
-              <h2>GW{matchups.gw} matchups {matchups.status === "live" && <span className="pill alive" style={{ marginLeft: 8 }}>LIVE</span>}</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
+              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span>GW{matchups.gw} matchups {matchups.status === "live" && <span className="pill alive" style={{ marginLeft: 8 }}>LIVE</span>}</span>
+                <span className="muted" style={{ fontSize: 12, fontWeight: 400, textTransform: "none" }}>{matchups.matchups.length} fixture{matchups.matchups.length !== 1 ? "s" : ""}</span>
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {matchups.matchups.map((m, i) => {
                   const p1 = m.entry1.points, p2 = m.entry2.points;
                   const leading1 = p1 !== null && p2 !== null && p1 > p2;
                   const leading2 = p1 !== null && p2 !== null && p2 > p1;
                   return (
-                    <div key={i} style={{ background: "var(--bg-elevated)", borderRadius: 10, padding: "10px 14px", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontWeight: leading1 ? 700 : 400, color: leading1 ? "var(--accent-bright)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {m.entry1.name}
-                      </span>
-                      <span style={{ margin: "0 10px", fontWeight: 700, flexShrink: 0 }}>{p1 ?? "-"} : {p2 ?? "-"}</span>
-                      <span style={{ fontWeight: leading2 ? 700 : 400, color: leading2 ? "var(--accent-bright)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>
-                        {m.entry2.name}
-                      </span>
+                    <div
+                      key={i}
+                      style={{
+                        background: "var(--bg-elevated)", borderRadius: 10, padding: "14px 16px",
+                        display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12,
+                      }}
+                    >
+                      <TruncateText
+                        text={m.entry1.name}
+                        maxWidth={150}
+                        href={`/team/${m.entry1.id}`}
+                      />
+                      <div style={{
+                        fontSize: 15, fontWeight: 700, flexShrink: 0, padding: "4px 12px",
+                        borderRadius: 8, background: "var(--panel)", whiteSpace: "nowrap",
+                      }}>
+                        <span style={{ color: leading1 ? "var(--accent-bright)" : "var(--text)" }}>{p1 ?? "–"}</span>
+                        <span style={{ color: "var(--muted-2)", margin: "0 4px" }}>:</span>
+                        <span style={{ color: leading2 ? "var(--accent-bright)" : "var(--text)" }}>{p2 ?? "–"}</span>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <TruncateText
+                          text={m.entry2.name}
+                          maxWidth={150}
+                          href={`/team/${m.entry2.id}`}
+                        />
+                      </div>
                     </div>
                   );
                 })}

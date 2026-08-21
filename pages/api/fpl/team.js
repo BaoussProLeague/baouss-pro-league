@@ -1,4 +1,5 @@
 import { fpl } from "../../../lib/fpl";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 // Same anti-copying rule FPL enforces on their own site: a manager's
 // picks for a gameweek that hasn't locked yet are only visible to that
@@ -8,6 +9,7 @@ import { fpl } from "../../../lib/fpl";
 // not just in the UI, so there's no way to bypass it by hitting the API
 // directly with a future GW number.
 export default async function handler(req, res) {
+  setNoCache(res);
   const { entryId, gw } = req.query;
   if (!entryId) return res.status(400).json({ error: "entryId is required." });
 

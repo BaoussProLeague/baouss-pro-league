@@ -1,7 +1,9 @@
 import { fpl } from "../../../lib/fpl";
 import { getLiveGwScores, gwStatus } from "../../../lib/prizes/liveScores";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   const leagueId = req.query.id || process.env.FPL_H2H_LEAGUE_ID;
   if (!leagueId) return res.status(400).json({ error: "Missing H2H league id." });
 

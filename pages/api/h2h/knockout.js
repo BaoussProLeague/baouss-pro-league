@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "../../../lib/supabase";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const { data, error } = await supabaseAdmin
       .from("h2h_knockout_results")

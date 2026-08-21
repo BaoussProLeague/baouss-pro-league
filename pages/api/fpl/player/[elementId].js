@@ -1,6 +1,8 @@
 import { fpl } from "../../../../lib/fpl";
+import { setNoCache } from "../../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   const { elementId } = req.query;
   if (!elementId) return res.status(400).json({ error: "elementId is required." });
 

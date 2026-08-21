@@ -1,7 +1,9 @@
 import { fpl } from "../../../lib/fpl";
 import { computeGwSnapshot } from "../../../lib/prizes/gwSnapshot";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   try {
     const bootstrap = await fpl.bootstrap();
     const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);

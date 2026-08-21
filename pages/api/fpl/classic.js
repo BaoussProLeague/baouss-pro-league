@@ -1,6 +1,8 @@
 import { fpl } from "../../../lib/fpl";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
+  setNoCache(res);
   const leagueId = req.query.id || process.env.FPL_CLASSIC_LEAGUE_ID;
   if (!leagueId) {
     return res.status(400).json({ error: "Missing classic league id. Set FPL_CLASSIC_LEAGUE_ID or pass ?id=" });

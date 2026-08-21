@@ -1,10 +1,12 @@
 import { fpl } from "../../../lib/fpl";
 import { computeH2hStandingsAtGw } from "../../../lib/prizes/h2hSnapshot";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
+import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const GROUP_STAGE_LAST_GW = 30;
 
 export default async function handler(req, res) {
+  setNoCache(res);
   const leagueId = req.query.id || process.env.FPL_H2H_LEAGUE_ID;
   if (!leagueId) {
     return res.status(400).json({ error: "Missing H2H league id. Set FPL_H2H_LEAGUE_ID or pass ?id=" });
