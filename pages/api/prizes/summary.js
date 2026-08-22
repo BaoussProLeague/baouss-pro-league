@@ -22,7 +22,14 @@ export default async function handler(req, res) {
     const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
     const currentGw = currentEvent ? currentEvent.id : 1;
     const status = gwStatus(currentEvent);
-    const lastPlayedGw = Math.max(1, currentGw - (status === "upcoming" ? 1 : 0));
+    // Bug found during audit: this only subtracted a gameweek for
+    // "upcoming" status, treating "live" the same as "completed" - so
+    // during a live gameweek, "last played" pointed at the gameweek
+    // that's still being played, not the last one that actually
+    // finished. Now that comebackKing is live-aware, currentGw itself
+    // (not this) is what's actually passed to it - this value stays for
+    // anything that genuinely needs "last fully completed gameweek."
+    const lastPlayedGw = status === "completed" ? currentGw : Math.max(1, currentGw - 1);
     const prevGw = Math.max(1, currentGw - 1);
 
     // "Is anything actually happening right now" - the single source of
@@ -40,8 +47,8 @@ export default async function handler(req, res) {
     const standingsForRank = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name, rank: e.rank }));
     const topHalfCutoff = Math.ceil(entries.length / 2);
 
-    const motmByMonth = managerOfTheMonth(histories, monthGwMap);
-    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap);
+    const motmByMonth = managerOfTheMonth(histories, monthGwMap, status === "live" ? currentGw : null, liveScoresMap);
+    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, status === "live" ? currentGw : null, liveScoresMap);
 
     // Current month's leaders, for a quick "who's leading right now" view
     const monthEntries = Object.entries(monthGwMap);
@@ -61,11 +68,11 @@ export default async function handler(req, res) {
       liveNow,
       teamValue: teamValueNow,
       benchPoints: benchPointsNow,
-      first1499: firstToThreshold(histories, 1499),
+      first1499: firstToThreshold(histories, 1499, status === "live" ? currentGw : null, liveScoresMap),
       chips: chipPrizes(histories, status === "live" ? currentGw : null, liveScoresMap),
-      wildcardVision: wildcardVision(histories),
+      wildcardVision: wildcardVision(histories, status === "live" ? currentGw : null, liveScoresMap),
       leastTransferCost: leastTransferCostNow,
-      comebackKing: currentGw > 19 ? comebackKing(histories, lastPlayedGw, topHalfCutoff) : [],
+      comebackKing: currentGw > 19 ? comebackKing(histories, currentGw, topHalfCutoff, status === "live" ? currentGw : null, liveScoresMap) : [],
       motm: motmByMonth,
       rankJumpByMonth: rankJumpByMonthResult,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,

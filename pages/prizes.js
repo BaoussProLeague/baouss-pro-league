@@ -69,12 +69,12 @@ export default function Prizes() {
     const d = data.deltas || {};
     if (key === "teamValue") return data.teamValue.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `£${r.value.toFixed(1)}m`, delta: d.teamValue?.[r.entry] }));
     if (key === "benchPoints") return data.benchPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.benchPoints} pts`, delta: d.benchPoints?.[r.entry] }));
-    if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}` }));
+    if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}${r.isLive ? " · live" : ""}` }));
     if (key === "leastTransferCost") return data.leastTransferCost.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `-${r.hitCost} pts`, delta: d.leastTransferCost?.[r.entry] }));
     if (key === "wildcardVision") return data.wildcardVision.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.total} pts${r.complete ? "" : " (in progress)"}` }));
     if (key === "comebackKing") return data.comebackKing.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `+${r.jump} places` }));
     if (key === "perfectCaptaincy" && captaincy) return captaincy.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.perfectCalls}/${r.gwsTracked} GWs`, delta: captaincyDeltas[r.entry] }));
-    if (key === "captainPoints" && captainPoints) return captainPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.totalCaptainPoints} pts`, delta: captainPointsDeltas[r.entry] }));
+    if (key === "captainPoints" && captainPoints) return captainPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.totalCaptainPoints} pts${r.tripleCaptainCount > 0 ? " (incl. TC)" : ""}`, delta: captainPointsDeltas[r.entry] }));
     if (key === "defGk" && defGk) return defGk.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.totalPoints} pts`, delta: defGkDeltas[r.entry] }));
 
     const chipKey = Object.entries(CHIP_KEY_MAP).find(([, v]) => v === key)?.[0];

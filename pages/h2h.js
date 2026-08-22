@@ -10,7 +10,16 @@ export default function H2H() {
   const [error, setError] = useState(null);
   const [knockout, setKnockout] = useState(null);
   const [matchups, setMatchups] = useState(null);
+  const [matchupsGw, setMatchupsGw] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const loadMatchups = (gw) => {
+    const q = gw ? `?gw=${gw}` : "";
+    fetch(`/api/h2h/matchups${q}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => !d.error && setMatchups(d))
+      .catch(() => {});
+  };
 
   const load = () => {
     setLoading(true);
@@ -26,10 +35,7 @@ export default function H2H() {
       .then((d) => !d.error && setKnockout(d))
       .catch(() => {});
 
-    fetch("/api/h2h/matchups", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => !d.error && setMatchups(d))
-      .catch(() => {});
+    loadMatchups(matchupsGw);
   };
 
   useAutoRefresh(load, 60000);
@@ -95,49 +101,65 @@ export default function H2H() {
             </div>
           )}
 
-          {matchups && matchups.matchups && matchups.matchups.length > 0 && (
+          {matchups && (
             <div className="card">
-              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span>GW{matchups.gw} matchups {matchups.status === "live" && <span className="pill alive" style={{ marginLeft: 8 }}>LIVE</span>}</span>
-                <span className="muted" style={{ fontSize: 12, fontWeight: 400, textTransform: "none" }}>{matchups.matchups.length} fixture{matchups.matchups.length !== 1 ? "s" : ""}</span>
+              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                <span>
+                  GW{matchups.gw} matchups
+                  {matchups.isCurrentGw && matchups.status === "live" && <span className="pill alive" style={{ marginLeft: 8 }}>LIVE</span>}
+                  {!matchups.isCurrentGw && <span className="pill admin" style={{ marginLeft: 8 }}>{matchups.gw > matchups.currentGw ? "Upcoming" : "Past"}</span>}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={() => { const g = matchups.gw - 1; setMatchupsGw(g); loadMatchups(g); }}
+                    disabled={matchups.gw <= matchups.firstGw}
+                    style={{ padding: "4px 10px", fontSize: 13 }}
+                  >←</button>
+                  <span className="muted" style={{ fontSize: 12 }}>{matchups.matchups.length} fixture{matchups.matchups.length !== 1 ? "s" : ""}</span>
+                  <button
+                    onClick={() => { const g = matchups.gw + 1; setMatchupsGw(g); loadMatchups(g); }}
+                    disabled={matchups.gw >= matchups.lastGw}
+                    style={{ padding: "4px 10px", fontSize: 13 }}
+                  >→</button>
+                </div>
               </h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {matchups.matchups.map((m, i) => {
-                  const p1 = m.entry1.points, p2 = m.entry2.points;
-                  const leading1 = p1 !== null && p2 !== null && p1 > p2;
-                  const leading2 = p1 !== null && p2 !== null && p2 > p1;
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        background: "var(--bg-elevated)", borderRadius: 10, padding: "14px 16px",
-                        display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12,
-                      }}
-                    >
-                      <TruncateText
-                        text={m.entry1.name}
-                        maxWidth={150}
-                        href={`/team/${m.entry1.id}`}
-                      />
-                      <div style={{
-                        fontSize: 15, fontWeight: 700, flexShrink: 0, padding: "4px 12px",
-                        borderRadius: 8, background: "var(--panel)", whiteSpace: "nowrap",
-                      }}>
-                        <span style={{ color: leading1 ? "var(--accent-bright)" : "var(--text)" }}>{p1 ?? "–"}</span>
-                        <span style={{ color: "var(--muted-2)", margin: "0 4px" }}>:</span>
-                        <span style={{ color: leading2 ? "var(--accent-bright)" : "var(--text)" }}>{p2 ?? "–"}</span>
+              {matchups.matchups.length === 0 ? (
+                <p className="muted">
+                  {matchups.gw < matchups.firstGw
+                    ? "No fixtures - the schedule starts at GW2."
+                    : "No fixtures found for this gameweek - has the H2H schedule been generated yet? Ask an admin to check."}
+                </p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {matchups.matchups.map((m, i) => {
+                    const p1 = m.entry1.points, p2 = m.entry2.points;
+                    const leading1 = p1 !== null && p2 !== null && p1 > p2;
+                    const leading2 = p1 !== null && p2 !== null && p2 > p1;
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          background: "var(--bg-elevated)", borderRadius: 10, padding: "14px 16px",
+                          display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12,
+                        }}
+                      >
+                        <TruncateText text={m.entry1.name} maxWidth={150} href={`/team/${m.entry1.id}`} />
+                        <div style={{
+                          fontSize: 15, fontWeight: 700, flexShrink: 0, padding: "4px 12px",
+                          borderRadius: 8, background: "var(--panel)", whiteSpace: "nowrap",
+                        }}>
+                          <span style={{ color: leading1 ? "var(--accent-bright)" : "var(--text)" }}>{p1 ?? "–"}</span>
+                          <span style={{ color: "var(--muted-2)", margin: "0 4px" }}>:</span>
+                          <span style={{ color: leading2 ? "var(--accent-bright)" : "var(--text)" }}>{p2 ?? "–"}</span>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <TruncateText text={m.entry2.name} maxWidth={150} href={`/team/${m.entry2.id}`} />
+                        </div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <TruncateText
-                          text={m.entry2.name}
-                          maxWidth={150}
-                          href={`/team/${m.entry2.id}`}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

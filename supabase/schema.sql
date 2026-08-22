@@ -122,7 +122,9 @@ create table if not exists captain_accuracy (
   entry_name text not null,
   gw int not null,
   captain_element_id int,
-  captain_points int,
+  captain_points int,                 -- RAW score, pre-multiplier - used for Perfect Captaincy
+  captain_awarded_points int,         -- ACTUAL awarded score (x2 normally, x3 for Triple Captain) - used for the Captain Points prize
+  captain_multiplier int,             -- 2 or 3, straight from FPL's own picks data
   was_top_scorer_in_squad boolean not null,
   created_at timestamptz default now(),
   unique (entry_id, gw)
