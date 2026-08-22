@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import PlayerPhoto from "../../components/PlayerPhoto";
 
 const CHIP_LABELS = { wildcard: "Wildcard", freehit: "Free Hit", bboost: "Bench Boost", "3xc": "Triple Captain" };
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defenders", 3: "Midfielders", 4: "Forwards" };
@@ -15,35 +16,6 @@ function Crest({ code, size = 16 }) {
       width={size}
       height={size}
       style={{ objectFit: "contain" }}
-      onError={() => setFailed(true)}
-    />
-  );
-}
-
-// Real player photos from FPL's own CDN - same "reference the official
-// image, don't redraw it" approach already used for club crests. Falls
-// back to a plain initial badge if a specific player's photo 404s, which
-// happens occasionally for newer signings FPL hasn't uploaded yet.
-function PlayerPhoto({ photoCode, name }) {
-  const [failed, setFailed] = useState(false);
-  if (!photoCode || failed) {
-    return (
-      <div style={{
-        width: 44, height: 44, borderRadius: "50%", background: "var(--panel-hover)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 15, fontWeight: 700, color: "var(--muted)", margin: "0 auto",
-      }}>
-        {name ? name[0] : "?"}
-      </div>
-    );
-  }
-  return (
-    <img
-      src={`https://resources.premierleague.com/premierleague26/photos/players/110x140/${photoCode}.png`}
-      alt=""
-      width={44}
-      height={44}
-      style={{ objectFit: "cover", borderRadius: "50%", display: "block", margin: "0 auto" }}
       onError={() => setFailed(true)}
     />
   );
@@ -102,7 +74,7 @@ export default function TeamView() {
     setLoading(true);
     setError(null);
     const q = targetGw ? `&gw=${targetGw}` : "";
-    fetch(`/api/fpl/team?entryId=${entryId}${q}`)
+    fetch(`/api/fpl/team?entryId=${entryId}${q}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);

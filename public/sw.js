@@ -14,6 +14,16 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Pass every request straight through to the network - no caching.
-  event.respondWith(fetch(event.request));
+  const url = new URL(event.request.url);
+
+  // API calls carry live scores and fixture state - they must never be
+  // intercepted or served from any cache, browser or otherwise. Letting
+  // the browser handle these natively (skip respondWith entirely) is the
+  // only way to guarantee that, rather than trusting a passthrough fetch
+  // to not accidentally use the HTTP cache.
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  event.respondWith(fetch(event.request, { cache: "no-store" }));
 });

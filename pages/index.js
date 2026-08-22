@@ -18,7 +18,7 @@ export default function Home() {
   const load = () => {
     setLoading(true);
     setError(null);
-    fetch("/api/fpl/classic")
+    fetch("/api/fpl/classic", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (d.error) setError(d.error);
@@ -27,17 +27,17 @@ export default function Home() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
-    fetch("/api/prizes/gw-snapshot")
+    fetch("/api/prizes/gw-snapshot", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setSnapshot(d))
       .catch(() => {});
 
-    fetch("/api/fpl/fixtures")
+    fetch("/api/fpl/fixtures", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setFixtures(d))
       .catch(() => {});
 
-    fetch("/api/fpl/table")
+    fetch("/api/fpl/table", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setTable(d.table))
       .catch(() => {});

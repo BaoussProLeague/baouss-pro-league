@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { logAdminActivity } from "../../../lib/adminLog";
 import { fpl } from "../../../lib/fpl";
-import { computeH2hStandingsAtGw } from "../../../lib/prizes/h2hSnapshot";
+import { loadAllHistories } from "../../../lib/prizes/fromHistory";
+import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 
 const GROUP_STAGE_LAST_GW = 30;
 
@@ -42,18 +43,23 @@ export default async function handler(req, res) {
     // this API directly could bypass it, so the real rule lives here: a
     // fixture can only be recorded between two teams that actually
     // qualified for the cup it's being entered under.
-    const h2hLeagueId = process.env.FPL_H2H_LEAGUE_ID;
+    const h2hLeagueId = process.env.FPL_CLASSIC_LEAGUE_ID;
     if (h2hLeagueId) {
-      const allMatches = await fpl.allH2hMatches(h2hLeagueId);
-      const ranked = computeH2hStandingsAtGw(allMatches, GROUP_STAGE_LAST_GW);
-      const cupIds = new Set(
-        (cup === "gold" ? ranked.slice(0, 16) : ranked.slice(16, 32)).map((r) => r.entry)
-      );
-      const bothQualify = cupIds.has(Number(entryId1)) && cupIds.has(Number(entryId2));
-      if (!bothQualify) {
-        return res.status(400).json({
-          error: `One or both selected teams did not qualify for the ${cup === "gold" ? "Gold" : "Silver"} Cup based on the GW${GROUP_STAGE_LAST_GW} group standings. Double-check the cup selection and team choices.`,
-        });
+      const { data: fixtures } = await supabaseAdmin.from("h2h_custom_fixtures").select("*");
+      if (fixtures && fixtures.length > 0) {
+        const { entries } = await fpl.allClassicEntries(h2hLeagueId);
+        const simpleEntries = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name }));
+        const histories = await loadAllHistories(simpleEntries);
+        const ranked = computeCustomH2hStandings(fixtures, histories, GROUP_STAGE_LAST_GW);
+        const cupIds = new Set(
+          (cup === "gold" ? ranked.slice(0, 16) : ranked.slice(16, 32)).map((r) => r.entry)
+        );
+        const bothQualify = cupIds.has(Number(entryId1)) && cupIds.has(Number(entryId2));
+        if (!bothQualify) {
+          return res.status(400).json({
+            error: `One or both selected teams did not qualify for the ${cup === "gold" ? "Gold" : "Silver"} Cup based on the GW${GROUP_STAGE_LAST_GW} group standings. Double-check the cup selection and team choices.`,
+          });
+        }
       }
     }
 

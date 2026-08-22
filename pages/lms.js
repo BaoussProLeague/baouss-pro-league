@@ -10,7 +10,7 @@ export default function Lms() {
   const load = () => {
     setLoading(true);
     setError(null);
-    fetch("/api/lms/status")
+    fetch("/api/lms/status", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message))

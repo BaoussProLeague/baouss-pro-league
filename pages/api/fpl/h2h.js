@@ -1,46 +1,65 @@
 import { fpl } from "../../../lib/fpl";
-import { computeH2hStandingsAtGw } from "../../../lib/prizes/h2hSnapshot";
+import { supabaseAdmin } from "../../../lib/supabase";
+import { loadAllHistories } from "../../../lib/prizes/fromHistory";
+import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const GROUP_STAGE_LAST_GW = 30;
 
+// Self-hosted H2H, entirely independent of FPL's own H2H league (which
+// you called obsolete once some managers missed its join deadline).
+// Fixtures come from our own generated schedule (see
+// /api/admin/generate-h2h-fixtures); results come from comparing each
+// pair's real Classic gameweek score.
 export default async function handler(req, res) {
   setNoCache(res);
-  const leagueId = req.query.id || process.env.FPL_H2H_LEAGUE_ID;
-  if (!leagueId) {
-    return res.status(400).json({ error: "Missing H2H league id. Set FPL_H2H_LEAGUE_ID or pass ?id=" });
-  }
   try {
+    const { data: fixtures, error: fixturesError } = await supabaseAdmin
+      .from("h2h_custom_fixtures")
+      .select("*");
+    if (fixturesError) throw fixturesError;
+
+    if (!fixtures || fixtures.length === 0) {
+      return res.status(200).json({
+        currentGw: null,
+        groupStageOver: false,
+        groupStageSnapshotGw: null,
+        hasStarted: false,
+        fixturesGenerated: false,
+        standings: [],
+        cupQualification: { gold: [], silver: [] },
+      });
+    }
+
+    const leagueId = process.env.FPL_CLASSIC_LEAGUE_ID;
+    const { entries } = await fpl.allClassicEntries(leagueId);
+    const simpleEntries = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name }));
+    const histories = await loadAllHistories(simpleEntries);
+
     const bootstrap = await fpl.bootstrap();
     const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
     const currentGw = currentEvent ? currentEvent.id : 1;
     const groupStageOver = currentGw > GROUP_STAGE_LAST_GW;
 
-    const { league } = await fpl.allH2hEntries(leagueId);
-    const allMatches = await fpl.allH2hMatches(leagueId);
-
     const uptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : currentGw;
-    const ranked = computeH2hStandingsAtGw(allMatches, uptoGw);
+    const ranked = computeCustomH2hStandings(fixtures, histories, uptoGw);
+
     // Last week's standings, purely to diff against this week's for the
     // rank-change arrows - frozen once the group stage itself is frozen.
     const prevUptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : Math.max(1, currentGw - 1);
-    const rankedPrev = computeH2hStandingsAtGw(allMatches, prevUptoGw);
+    const rankedPrev = computeCustomH2hStandings(fixtures, histories, prevUptoGw);
     const deltas = computeRankDeltas(ranked, rankedPrev);
 
     const gold = ranked.slice(0, 16);
     const silver = ranked.slice(16, 32);
 
     res.status(200).json({
-      league: { id: league.id, name: league.name },
       currentGw,
       groupStageOver,
       groupStageSnapshotGw: groupStageOver ? GROUP_STAGE_LAST_GW : null,
-      // If nobody's played a match yet, `ranked` is empty regardless of
-      // how many managers have joined - that's a "matches haven't
-      // started" state, not a manager-count problem, and the page should
-      // say so rather than guessing at a reason.
       hasStarted: ranked.length > 0,
+      fixturesGenerated: true,
       standings: ranked.map((r, i) => ({
         entry: r.entry,
         entryName: r.entryName,

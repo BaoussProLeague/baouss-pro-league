@@ -36,12 +36,12 @@ export default function Prizes() {
 
   const load = () => {
     setError(null);
-    fetch("/api/prizes/summary")
+    fetch("/api/prizes/summary", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message));
 
-    fetch("/api/prizes/captaincy")
+    fetch("/api/prizes/captaincy", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (!d.error) {
@@ -51,12 +51,12 @@ export default function Prizes() {
       })
       .catch(() => {});
 
-    fetch("/api/prizes/defgk")
+    fetch("/api/prizes/defgk", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => { if (!d.error) { setDefGk(d.leaderboard); setDefGkDeltas(d.deltas || {}); } })
       .catch(() => {});
 
-    fetch("/api/prizes/mega-gw")
+    fetch("/api/prizes/mega-gw", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setMegaGws(d.megaGws))
       .catch(() => {});

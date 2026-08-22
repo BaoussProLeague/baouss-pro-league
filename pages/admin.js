@@ -9,6 +9,8 @@ export default function Admin() {
   const [authError, setAuthError] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [h2hFixtureInfo, setH2hFixtureInfo] = useState(null);
+  const [generatingFixtures, setGeneratingFixtures] = useState(false);
 
   const [classicEntries, setClassicEntries] = useState([]);
   const [h2hQualifiers, setH2hQualifiers] = useState({ gold: [], silver: [] });
@@ -417,6 +419,19 @@ export default function Admin() {
     }
   };
 
+  const generateH2hFixtures = async (force = false) => {
+    if (force && !window.confirm("This deletes the existing H2H schedule and every score computed from it, then generates a brand new one. This can't be undone. Are you certain?")) {
+      return;
+    }
+    setGeneratingFixtures(true);
+    const result = await call("/api/admin/generate-h2h-fixtures", { force });
+    setGeneratingFixtures(false);
+    if (result) {
+      setH2hFixtureInfo(result);
+      showSuccess(`Generated ${result.fixtureCount} fixtures across ${result.roundCount} rounds for ${result.teamCount} teams.`);
+    }
+  };
+
   const exportExcel = () => {
     window.location.href = `/api/admin/export?password=${encodeURIComponent(password)}`;
   };
@@ -573,6 +588,24 @@ export default function Admin() {
               ))}
             </tbody>
           </table></div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2>H2H season fixtures</h2>
+        <p className="muted">Self-hosted, entirely independent of FPL's own H2H league. Generates a proper round-robin schedule (GW2 through GW30, 29 rounds) for every current Classic League entry, using the standard algorithm that guarantees no manager repeats an opponent. This is a one-time action - the schedule locks in whoever's in the Classic League at the moment you click it.</p>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button onClick={() => generateH2hFixtures(false)} disabled={generatingFixtures}>
+            {generatingFixtures ? "Generating…" : "Generate H2H fixtures"}
+          </button>
+          <button onClick={() => generateH2hFixtures(true)} disabled={generatingFixtures} style={{ color: "var(--danger)" }}>
+            Force regenerate (destructive)
+          </button>
+        </div>
+        {h2hFixtureInfo && (
+          <p style={{ marginTop: 10, fontSize: 13 }} className="muted">
+            Last generated: {h2hFixtureInfo.fixtureCount} fixtures, {h2hFixtureInfo.roundCount} rounds, {h2hFixtureInfo.teamCount} teams.
+          </p>
         )}
       </div>
 

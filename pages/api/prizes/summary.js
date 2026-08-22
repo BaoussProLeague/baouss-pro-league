@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScores, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     if (status === "live") {
       const rawFixtures = await fpl.fixtures(currentGw);
       liveNow = isAnyMatchLive(rawFixtures);
-      const liveScores = await getLiveGwScores(simpleEntries, currentGw);
+      const liveScores = getLiveGwScoresFromStandings(entries);
       liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
     }
 

@@ -6,7 +6,7 @@ export default function Rules() {
 
   const load = () => {
     setError(null);
-    fetch("/api/fpl/months")
+    fetch("/api/fpl/months", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setMonths(d.months)))
       .catch((e) => setError(e.message));

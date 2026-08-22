@@ -167,3 +167,26 @@ create table if not exists def_gk_points_log (
 -- H2H knockout bracket - admin enters each round's result as it happens.
 -- (h2h_knockout_results table already defined above.)
 -- =========================================================================
+
+-- =========================================================================
+-- Self-hosted H2H fixtures - replaces reliance on FPL's own H2H league
+-- entirely, per your call that the official one is obsolete now that some
+-- managers missed its join deadline. Generated once, in full, by an
+-- admin action - the schedule itself never changes after that; only the
+-- scores (read live from each manager's Classic gameweek history) change
+-- as the season plays out.
+-- =========================================================================
+create table if not exists h2h_custom_fixtures (
+  id bigint generated always as identity primary key,
+  round int not null,        -- 1 through 29
+  gw int not null,           -- round + 1, i.e. GW2 through GW30
+  entry_id_1 bigint not null,
+  entry_id_2 bigint,         -- null means entry_id_1 had a bye this round (odd team count)
+  created_at timestamptz default now()
+);
+
+-- Guards against accidentally generating the schedule twice and getting
+-- two overlapping seasons' worth of fixtures - the admin route checks
+-- this before writing, but the empty-check itself lives here as the
+-- source of truth.
+create index if not exists idx_h2h_custom_fixtures_gw on h2h_custom_fixtures(gw);

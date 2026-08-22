@@ -15,18 +15,18 @@ export default function H2H() {
   const load = () => {
     setLoading(true);
     setError(null);
-    fetch("/api/fpl/h2h")
+    fetch("/api/fpl/h2h", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
 
-    fetch("/api/h2h/knockout")
+    fetch("/api/h2h/knockout", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setKnockout(d))
       .catch(() => {});
 
-    fetch("/api/h2h/matchups")
+    fetch("/api/h2h/matchups", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => !d.error && setMatchups(d))
       .catch(() => {});
@@ -75,7 +75,13 @@ export default function H2H() {
 
       {loading && !error && <div className="card muted">Loading H2H standings…</div>}
 
-      {data && (
+      {data && data.fixturesGenerated === false && (
+        <div className="card muted" style={{ borderColor: "var(--accent)", padding: "12px 20px" }}>
+          H2H fixtures haven't been generated yet - ask an admin to set up the season schedule.
+        </div>
+      )}
+
+      {data && data.fixturesGenerated !== false && (
         <>
           {!data.hasStarted && (
             <div className="card muted" style={{ borderColor: "var(--accent)", padding: "12px 20px" }}>

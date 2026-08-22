@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import PlayerPhoto from "../../components/PlayerPhoto";
 
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defender", 3: "Midfielder", 4: "Forward" };
 const STATUS_LABELS = { a: null, i: "Injured", d: "Doubtful", s: "Suspended", u: "Unavailable" };
@@ -23,7 +24,7 @@ export default function PlayerDetail() {
 
   useEffect(() => {
     if (!elementId) return;
-    fetch(`/api/fpl/player/${elementId}`)
+    fetch(`/api/fpl/player/${elementId}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message));
@@ -43,12 +44,7 @@ export default function PlayerDetail() {
       <div className="hero">
         <p style={{ marginBottom: 8 }}><Link href="/" style={{ color: "var(--muted)", fontSize: 13 }}>← Back to standings</Link></p>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {data.photoCode && (
-            <img
-              src={`https://resources.premierleague.com/premierleague26/photos/players/110x140/${data.photoCode}.png`}
-              alt="" width={64} height={64} style={{ borderRadius: "50%", objectFit: "cover" }}
-            />
-          )}
+          <PlayerPhoto photoCode={data.photoCode} name={data.name} size={64} />
           <div>
             <h1 style={{ marginBottom: 2 }}>{data.fullName}</h1>
             <p style={{ display: "flex", alignItems: "center", gap: 6 }}>

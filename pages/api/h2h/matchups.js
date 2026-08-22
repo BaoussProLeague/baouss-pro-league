@@ -1,11 +1,10 @@
 import { fpl } from "../../../lib/fpl";
-import { getLiveGwScores, gwStatus } from "../../../lib/prizes/liveScores";
+import { supabaseAdmin } from "../../../lib/supabase";
+import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 export default async function handler(req, res) {
   setNoCache(res);
-  const leagueId = req.query.id || process.env.FPL_H2H_LEAGUE_ID;
-  if (!leagueId) return res.status(400).json({ error: "Missing H2H league id." });
 
   try {
     const bootstrap = await fpl.bootstrap();
@@ -13,30 +12,30 @@ export default async function handler(req, res) {
     const currentGw = currentEvent ? currentEvent.id : 1;
     const status = gwStatus(currentEvent);
 
-    const allMatches = await fpl.allH2hMatches(leagueId);
-    const thisWeek = allMatches.filter((m) => m.event === currentGw && m.entry_1_entry && m.entry_2_entry);
+    const { data: thisWeek, error } = await supabaseAdmin
+      .from("h2h_custom_fixtures")
+      .select("*")
+      .eq("gw", currentGw)
+      .not("entry_id_2", "is", null); // exclude byes from the matchups view
 
-    if (thisWeek.length === 0) {
+    if (error) throw error;
+    if (!thisWeek || thisWeek.length === 0) {
       return res.status(200).json({ gw: currentGw, status, matchups: [] });
     }
 
-    // Same staleness issue as the chip/Mega GW bug: match points on this
-    // endpoint don't reliably reflect a still-in-progress gameweek, so
-    // live scores are computed the same reliable way as everywhere else
-    // in the app rather than trusted from the match record directly.
-    const entrySet = new Map();
-    thisWeek.forEach((m) => {
-      entrySet.set(m.entry_1_entry, m.entry_1_name);
-      entrySet.set(m.entry_2_entry, m.entry_2_name);
-    });
-    const entries = Array.from(entrySet.entries()).map(([entry, entryName]) => ({ entry, entryName }));
+    const leagueId = process.env.FPL_CLASSIC_LEAGUE_ID;
+    const { entries: classicEntries } = await fpl.allClassicEntries(leagueId);
+    const nameById = new Map(classicEntries.map((e) => [e.entry, e.entry_name]));
 
-    const liveScores = status === "upcoming" ? [] : await getLiveGwScores(entries, currentGw);
-    const scoreById = new Map(liveScores.map((s) => [s.entry, s.points]));
+    let scoreById = new Map();
+    if (status !== "upcoming") {
+      const liveScores = getLiveGwScoresFromStandings(classicEntries);
+      scoreById = new Map(liveScores.map((s) => [s.entry, s.points]));
+    }
 
     const matchups = thisWeek.map((m) => ({
-      entry1: { id: m.entry_1_entry, name: m.entry_1_name, points: scoreById.get(m.entry_1_entry) ?? null },
-      entry2: { id: m.entry_2_entry, name: m.entry_2_name, points: scoreById.get(m.entry_2_entry) ?? null },
+      entry1: { id: m.entry_id_1, name: nameById.get(m.entry_id_1) || `Entry ${m.entry_id_1}`, points: scoreById.get(m.entry_id_1) ?? null },
+      entry2: { id: m.entry_id_2, name: nameById.get(m.entry_id_2) || `Entry ${m.entry_id_2}`, points: scoreById.get(m.entry_id_2) ?? null },
     }));
 
     res.status(200).json({ gw: currentGw, status, matchups });
