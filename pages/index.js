@@ -89,7 +89,7 @@ export default function Home() {
             <div className="table-scroll" style={{ maxHeight: 260, overflowY: "auto" }}>
               <table>
                 <thead>
-                  <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
+                  <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
                 </thead>
                 <tbody>
                   {table.map((t, i) => (
@@ -100,6 +100,7 @@ export default function Home() {
                       <td>{t.win}</td>
                       <td>{t.draw}</td>
                       <td>{t.loss}</td>
+                      <td>{t.gd > 0 ? `+${t.gd}` : t.gd}</td>
                       <td><strong>{t.points}</strong></td>
                     </tr>
                   ))}

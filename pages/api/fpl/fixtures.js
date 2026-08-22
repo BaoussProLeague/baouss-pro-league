@@ -85,7 +85,14 @@ export default async function handler(req, res) {
           id: f.id,
           kickoff: f.kickoff_time,
           started: f.started,
-          finished: f.finished,
+          // finished_provisional flips true right at full time - the
+          // score is locked in. `finished` waits for bonus points to be
+          // officially confirmed, which can take 30-90 minutes after the
+          // final whistle - using that one was exactly why a genuinely
+          // over match kept showing LIVE. Bonus confirmation status is
+          // still tracked separately below for the bonus points display.
+          finished: f.finished_provisional,
+          bonusConfirmed: f.finished,
           minutes: f.minutes,
           home: teamsById.get(f.team_h) || { name: "TBC", shortName: "TBC" },
           away: teamsById.get(f.team_a) || { name: "TBC", shortName: "TBC" },
