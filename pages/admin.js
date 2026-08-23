@@ -9,6 +9,7 @@ export default function Admin() {
   const [authError, setAuthError] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [computationStatus, setComputationStatus] = useState(null);
   const [h2hFixtureInfo, setH2hFixtureInfo] = useState(null);
   const [generatingFixtures, setGeneratingFixtures] = useState(false);
 
@@ -92,6 +93,14 @@ export default function Admin() {
     }
   };
 
+  const loadComputationStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/computation-status", { cache: "no-store" });
+      const d = await res.json();
+      if (!d.error) setComputationStatus(d.statuses);
+    } catch (e) {}
+  };
+
   const loadClassicEntries = async () => {
     try {
       const res = await fetch("/api/fpl/classic");
@@ -158,7 +167,7 @@ export default function Admin() {
 
   const refreshAll = async () => {
     setRefreshing(true);
-    await Promise.all([loadClassicEntries(), loadH2hQualifiers(), loadRegistrations(), loadRebuys(), loadKnockouts(), loadMegaGws(), loadLogs(), reloadFinance()]);
+    await Promise.all([loadClassicEntries(), loadH2hQualifiers(), loadRegistrations(), loadRebuys(), loadKnockouts(), loadMegaGws(), loadLogs(), reloadFinance(), loadComputationStatus()]);
     setRefreshing(false);
   };
 
@@ -531,6 +540,28 @@ export default function Admin() {
           </table></div>
         </div>
       )}
+
+      <div className="card">
+        <h2>Automated computation status</h2>
+        <p className="muted">LMS, Captain accuracy, and Def+GK now run themselves once a day as matches settle - never while a match from that gameweek is actually in progress - and lock permanently 24 hours after that gameweek's last match. This is where you can see exactly where each one stands.</p>
+        {!computationStatus || computationStatus.length === 0 ? (
+          <p className="muted">No runs recorded yet.</p>
+        ) : (
+          <div className="table-scroll"><table>
+            <thead><tr><th>GW</th><th>Job</th><th>Last ran</th><th>Status</th></tr></thead>
+            <tbody>
+              {computationStatus.map((s) => (
+                <tr key={`${s.gw}-${s.job_type}`}>
+                  <td>{s.gw}</td>
+                  <td>{s.job_type}</td>
+                  <td>{s.last_run_date || "—"}</td>
+                  <td>{s.locked ? <span className="pill alive">Locked - final</span> : <span className="pill admin">Still updating daily</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
+      </div>
 
       <div className="card">
         <h2>Run everything for a gameweek</h2>

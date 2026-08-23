@@ -192,3 +192,20 @@ create table if not exists h2h_custom_fixtures (
 -- this before writing, but the empty-check itself lives here as the
 -- source of truth.
 create index if not exists idx_h2h_custom_fixtures_gw on h2h_custom_fixtures(gw);
+
+-- =========================================================================
+-- Tracks the daily-recompute-until-locked cycle for LMS/Captaincy/Def+GK,
+-- per your explicit call: run once a day as each day's matches settle
+-- (bonus points included), keep re-running daily throughout a multi-day
+-- gameweek, and lock permanently 24 hours after that gameweek's last
+-- match - no more recomputing after that, numbers are final.
+-- =========================================================================
+create table if not exists gw_computation_locks (
+  gw int not null,
+  job_type text not null check (job_type in ('lms', 'captaincy', 'defgk')),
+  last_run_at timestamptz,
+  last_run_date date,
+  locked boolean not null default false,
+  locked_at timestamptz,
+  primary key (gw, job_type)
+);

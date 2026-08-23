@@ -22,9 +22,18 @@ function Crest({ code, size = 16 }) {
 }
 
 function PlayerCard({ p }) {
+  // The same root cause as the Def+GK bug: livePoints is base x FPL's
+  // own multiplier, which is 0 for a bench player unless Bench Boost is
+  // active. Showing that on a bench card looked like "this player
+  // scored nothing" when they may well have scored plenty - they just
+  // don't count toward the real total from the bench. Only the captain
+  // needs the multiplied number (that's the whole point of seeing it
+  // doubled/tripled); everyone else, bench included, shows what they
+  // actually earned.
+  const displayPoints = p.isCaptain ? p.livePoints : p.basePoints;
   const pointsDisplay = p.fixture && !p.fixture.started
     ? p.fixture.label
-    : `${p.livePoints}`;
+    : `${displayPoints}`;
 
   return (
     <Link

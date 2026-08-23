@@ -29,3 +29,14 @@ create table if not exists h2h_custom_fixtures (
   created_at timestamptz default now()
 );
 create index if not exists idx_h2h_custom_fixtures_gw on h2h_custom_fixtures(gw);
+
+-- New this round: the daily-recompute-until-locked tracking table.
+create table if not exists gw_computation_locks (
+  gw int not null,
+  job_type text not null check (job_type in ('lms', 'captaincy', 'defgk')),
+  last_run_at timestamptz,
+  last_run_date date,
+  locked boolean not null default false,
+  locked_at timestamptz,
+  primary key (gw, job_type)
+);

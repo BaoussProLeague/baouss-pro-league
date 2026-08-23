@@ -12,10 +12,17 @@ import Link from "next/link";
 // doesn't pass it renders exactly as before, unchanged. Only call sites
 // that explicitly opt in by passing an entry ID become clickable links
 // to that manager's team view.
-export default function TruncateText({ text, maxWidth = 170, href }) {
+// `fixedWidth`, when given, forces a true CSS width instead of maxWidth -
+// a short name and a long name then occupy the exact same footprint,
+// which is what actually guarantees straight alignment in a row of
+// mixed-length names (maxWidth alone lets a short name's box shrink to
+// fit its content, which is what was throwing the H2H matchup rows out
+// of line on mobile). Optional and additive - existing call sites that
+// only pass maxWidth are completely unaffected.
+export default function TruncateText({ text, maxWidth = 170, fixedWidth, href }) {
   const style = {
     display: "inline-block",
-    maxWidth,
+    ...(fixedWidth ? { width: fixedWidth } : { maxWidth }),
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",

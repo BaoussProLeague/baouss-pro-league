@@ -140,10 +140,12 @@ export default function H2H() {
                         key={i}
                         style={{
                           background: "var(--bg-elevated)", borderRadius: 10, padding: "14px 16px",
-                          display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12,
+                          display: "grid", gridTemplateColumns: "100px auto 100px", alignItems: "center", gap: 12,
                         }}
                       >
-                        <TruncateText text={m.entry1.name} maxWidth={150} href={`/team/${m.entry1.id}`} />
+                        <div style={{ textAlign: "right" }}>
+                          <TruncateText text={m.entry1.name} fixedWidth={100} href={`/team/${m.entry1.id}`} />
+                        </div>
                         <div style={{
                           fontSize: 15, fontWeight: 700, flexShrink: 0, padding: "4px 12px",
                           borderRadius: 8, background: "var(--panel)", whiteSpace: "nowrap",
@@ -152,8 +154,8 @@ export default function H2H() {
                           <span style={{ color: "var(--muted-2)", margin: "0 4px" }}>:</span>
                           <span style={{ color: leading2 ? "var(--accent-bright)" : "var(--text)" }}>{p2 ?? "–"}</span>
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                          <TruncateText text={m.entry2.name} maxWidth={150} href={`/team/${m.entry2.id}`} />
+                        <div>
+                          <TruncateText text={m.entry2.name} fixedWidth={100} href={`/team/${m.entry2.id}`} />
                         </div>
                       </div>
                     );
