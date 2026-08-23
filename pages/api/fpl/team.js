@@ -50,8 +50,14 @@ export default async function handler(req, res) {
     for (const f of rawFixtures) {
       const homeTeam = teamsById.get(f.team_h);
       const awayTeam = teamsById.get(f.team_a);
-      teamFixture.set(f.team_h, { opponent: awayTeam ? awayTeam.short_name : "TBC", isHome: true, started: f.started, finished: f.finished });
-      teamFixture.set(f.team_a, { opponent: homeTeam ? homeTeam.short_name : "TBC", isHome: false, started: f.started, finished: f.finished });
+      // Same fix as the main fixtures route: finished_provisional flips
+      // true at full time, while finished waits for bonus points to be
+      // officially confirmed (can be 30-90 min later). Using the wrong
+      // one here wasn't the direct cause of bench showing 0 - that gate
+      // only checks `started` - but it was still wrong and worth fixing
+      // now that I've found it, rather than leaving it inconsistent.
+      teamFixture.set(f.team_h, { opponent: awayTeam ? awayTeam.short_name : "TBC", isHome: true, started: f.started, finished: f.finished_provisional });
+      teamFixture.set(f.team_a, { opponent: homeTeam ? homeTeam.short_name : "TBC", isHome: false, started: f.started, finished: f.finished_provisional });
     }
 
     const chip = picksData.active_chip; // 'wildcard' | 'freehit' | 'bboost' | '3xc' | null

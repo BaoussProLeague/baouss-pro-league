@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -36,11 +36,14 @@ export default async function handler(req, res) {
     // truth for whether a LIVE badge on a prize card is honest.
     let liveNow = false;
     let liveScoresMap = null;
+    let liveBenchMap = null;
     if (status === "live") {
       const rawFixtures = await fpl.fixtures(currentGw);
       liveNow = isAnyMatchLive(rawFixtures);
       const liveScores = getLiveGwScoresFromStandings(entries);
       liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
+      const liveBench = await getLiveBenchPointsFromPicks(simpleEntries, currentGw);
+      liveBenchMap = new Map(liveBench.map((s) => [s.entry, s]));
     }
 
     // Standings with rank, needed for top-half eligibility on a couple of prizes
@@ -55,7 +58,7 @@ export default async function handler(req, res) {
     const currentMonthEntry = monthEntries.find(([, gws]) => gws.includes(currentGw)) || monthEntries[monthEntries.length - 1];
 
     const teamValueNow = teamValue(histories);
-    const benchPointsNow = benchPoints(histories);
+    const benchPointsNow = benchPoints(histories, null, status === "live" ? currentGw : null, liveBenchMap);
     const leastTransferCostNow = leastTransferCost(histories, standingsForRank, topHalfCutoff);
 
     const teamValuePrev = teamValue(histories, prevGw);

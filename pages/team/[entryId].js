@@ -112,7 +112,9 @@ export default function TeamView() {
   return (
     <div className="container">
       <div className="hero">
-        <p style={{ marginBottom: 8 }}><Link href="/" style={{ color: "var(--muted)", fontSize: 13 }}>← Back to standings</Link></p>
+        <p style={{ marginBottom: 8 }}>
+          <a onClick={() => router.back()} style={{ color: "var(--muted)", fontSize: 13, cursor: "pointer" }}>← Back</a>
+        </p>
         <h1>{data ? data.teamName : "Team"}</h1>
         <p>{data ? `${data.managerName} · GW${data.gw}` : "Loading…"}</p>
       </div>

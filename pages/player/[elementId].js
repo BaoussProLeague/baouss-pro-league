@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import PlayerPhoto from "../../components/PlayerPhoto";
 
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defender", 3: "Midfielder", 4: "Forward" };
@@ -42,7 +41,9 @@ export default function PlayerDetail() {
   return (
     <div className="container">
       <div className="hero">
-        <p style={{ marginBottom: 8 }}><Link href="/" style={{ color: "var(--muted)", fontSize: 13 }}>← Back to standings</Link></p>
+        <p style={{ marginBottom: 8 }}>
+          <a onClick={() => router.back()} style={{ color: "var(--muted)", fontSize: 13, cursor: "pointer" }}>← Back</a>
+        </p>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <PlayerPhoto photoCode={data.photoCode} name={data.name} size={64} />
           <div>
