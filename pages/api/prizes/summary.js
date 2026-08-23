@@ -32,12 +32,21 @@ export default async function handler(req, res) {
     const lastPlayedGw = status === "completed" ? currentGw : Math.max(1, currentGw - 1);
     const prevGw = Math.max(1, currentGw - 1);
 
-    // "Is anything actually happening right now" - the single source of
-    // truth for whether a LIVE badge on a prize card is honest.
+    // The actual bug: gating this on status === "live" trusted FPL's own
+    // "gameweek finished" flag as proof that history had caught up too -
+    // but those are two separate FPL backend processes, and the flag can
+    // flip before history actually has. That left a real window where
+    // status said "completed" (so this never ran) while history was
+    // still missing that GW's row entirely - the number just froze wrong
+    // with nothing left to correct it. Fetching this whenever the GW has
+    // started (not just while "live") closes that gap - each prize's own
+    // check for "does history already have this row" (see benchPoints,
+    // managerOfTheMonth, etc.) decides whether to actually use it, so
+    // this is never wasted once history genuinely catches up.
     let liveNow = false;
     let liveScoresMap = null;
     let liveBenchMap = null;
-    if (status === "live") {
+    if (status !== "upcoming") {
       const rawFixtures = await fpl.fixtures(currentGw);
       liveNow = isAnyMatchLive(rawFixtures);
       const liveScores = getLiveGwScoresFromStandings(entries);
@@ -50,15 +59,15 @@ export default async function handler(req, res) {
     const standingsForRank = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name, rank: e.rank }));
     const topHalfCutoff = Math.ceil(entries.length / 2);
 
-    const motmByMonth = managerOfTheMonth(histories, monthGwMap, status === "live" ? currentGw : null, liveScoresMap);
-    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, status === "live" ? currentGw : null, liveScoresMap);
+    const motmByMonth = managerOfTheMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
+    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
 
     // Current month's leaders, for a quick "who's leading right now" view
     const monthEntries = Object.entries(monthGwMap);
     const currentMonthEntry = monthEntries.find(([, gws]) => gws.includes(currentGw)) || monthEntries[monthEntries.length - 1];
 
     const teamValueNow = teamValue(histories);
-    const benchPointsNow = benchPoints(histories, null, status === "live" ? currentGw : null, liveBenchMap);
+    const benchPointsNow = benchPoints(histories, null, status !== "upcoming" ? currentGw : null, liveBenchMap);
     const leastTransferCostNow = leastTransferCost(histories, standingsForRank, topHalfCutoff);
 
     const teamValuePrev = teamValue(histories, prevGw);
@@ -71,11 +80,11 @@ export default async function handler(req, res) {
       liveNow,
       teamValue: teamValueNow,
       benchPoints: benchPointsNow,
-      first1499: firstToThreshold(histories, 1499, status === "live" ? currentGw : null, liveScoresMap),
-      chips: chipPrizes(histories, status === "live" ? currentGw : null, liveScoresMap),
-      wildcardVision: wildcardVision(histories, status === "live" ? currentGw : null, liveScoresMap),
+      first1499: firstToThreshold(histories, 1499, status !== "upcoming" ? currentGw : null, liveScoresMap),
+      chips: chipPrizes(histories, status !== "upcoming" ? currentGw : null, liveScoresMap),
+      wildcardVision: wildcardVision(histories, status !== "upcoming" ? currentGw : null, liveScoresMap),
       leastTransferCost: leastTransferCostNow,
-      comebackKing: currentGw > 19 ? comebackKing(histories, currentGw, topHalfCutoff, status === "live" ? currentGw : null, liveScoresMap) : [],
+      comebackKing: currentGw > 19 ? comebackKing(histories, currentGw, topHalfCutoff, status !== "upcoming" ? currentGw : null, liveScoresMap) : [],
       motm: motmByMonth,
       rankJumpByMonth: rankJumpByMonthResult,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,

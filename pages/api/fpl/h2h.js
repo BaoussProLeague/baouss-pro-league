@@ -3,6 +3,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
+import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const GROUP_STAGE_LAST_GW = 30;
@@ -41,14 +42,27 @@ export default async function handler(req, res) {
     const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
     const currentGw = currentEvent ? currentEvent.id : 1;
     const groupStageOver = currentGw > GROUP_STAGE_LAST_GW;
+    const status = gwStatus(currentEvent);
+
+    // Same fallback as every other prize now: don't trust FPL's own
+    // "gameweek finished" status flag as proof that history has caught
+    // up too - fetch the live-verified score (same reliable Classic
+    // standings source) whenever the gameweek has started, and let the
+    // per-fixture lookup decide whether it's actually needed.
+    let liveScoresMap = null;
+    if (status !== "upcoming" && !groupStageOver) {
+      const { entries: classicEntries } = await fpl.allClassicEntries(leagueId);
+      const liveScores = getLiveGwScoresFromStandings(classicEntries);
+      liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
+    }
 
     const uptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : currentGw;
-    const ranked = computeCustomH2hStandings(fixtures, histories, uptoGw);
+    const ranked = computeCustomH2hStandings(fixtures, histories, uptoGw, currentGw, liveScoresMap);
 
     // Last week's standings, purely to diff against this week's for the
     // rank-change arrows - frozen once the group stage itself is frozen.
     const prevUptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : Math.max(1, currentGw - 1);
-    const rankedPrev = computeCustomH2hStandings(fixtures, histories, prevUptoGw);
+    const rankedPrev = computeCustomH2hStandings(fixtures, histories, prevUptoGw, currentGw, liveScoresMap);
     const deltas = computeRankDeltas(ranked, rankedPrev);
 
     const gold = ranked.slice(0, 16);
