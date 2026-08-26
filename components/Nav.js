@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const links = [
   { href: "/", label: "Classic" },
@@ -28,12 +28,26 @@ function Crest() {
 
 export default function Nav() {
   const router = useRouter();
+  const [gwInfo, setGwInfo] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/fpl/current-gw", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => !d.error && setGwInfo(d))
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="nav">
       <span className="brand">
         <Crest />
         Baouss<span className="gold">ProLeague</span>
       </span>
+      {gwInfo && gwInfo.gw && (
+        <span className="pill admin" style={{ marginLeft: 4, marginRight: 4, whiteSpace: "nowrap" }}>
+          GW{gwInfo.gw}{gwInfo.status === "live" ? " · LIVE" : ""}
+        </span>
+      )}
       {links.map((l) => (
         <Link key={l.href} href={l.href} className={router.pathname === l.href ? "active" : ""}>
           {l.label}

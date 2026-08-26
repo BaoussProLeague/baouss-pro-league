@@ -119,6 +119,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       gw, gwName: currentEvent.name, fixtures,
+      deadline: currentEvent.deadline_time,
       isDefaultGw: gw === defaultEvent.id,
       minGw, maxGw,
     });

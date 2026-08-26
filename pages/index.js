@@ -100,11 +100,47 @@ export default function Home() {
               </div>
             )}
           </h2>
+          {fixtures && fixtures.fixtures.length > 0 && (() => {
+            const kickoffs = fixtures.fixtures.map((f) => new Date(f.kickoff));
+            const first = new Date(Math.min(...kickoffs));
+            const last = new Date(Math.max(...kickoffs));
+            const dateOpts = { weekday: "short", day: "numeric", month: "short" };
+            const rangeLabel = first.toDateString() === last.toDateString()
+              ? first.toLocaleDateString(undefined, dateOpts)
+              : `${first.toLocaleDateString(undefined, dateOpts)} – ${last.toLocaleDateString(undefined, dateOpts)}`;
+            const deadlineLabel = fixtures.deadline
+              ? new Date(fixtures.deadline).toLocaleString(undefined, { ...dateOpts, hour: "2-digit", minute: "2-digit", hour12: false })
+              : null;
+            return (
+              <div style={{ marginBottom: 10 }}>
+                <p className="muted" style={{ fontSize: 13, marginBottom: 2 }}>{rangeLabel}</p>
+                {deadlineLabel && <p className="muted" style={{ fontSize: 12 }}>Deadline: {deadlineLabel} <span style={{ fontSize: 10 }}>(your local time)</span></p>}
+              </div>
+            );
+          })()}
           {!fixtures || fixtures.fixtures.length === 0 ? (
             <p className="muted">No fixtures found for this gameweek yet.</p>
           ) : (
-            <div style={{ maxHeight: 260, overflowY: "auto" }}>
-              {fixtures.fixtures.map((f) => <FixtureRow key={f.id} fixture={f} />)}
+            <div style={{ maxHeight: 320, overflowY: "auto" }}>
+              {(() => {
+                let lastDateKey = null;
+                return fixtures.fixtures.map((f) => {
+                  const kickoffDate = new Date(f.kickoff);
+                  const dateKey = kickoffDate.toDateString();
+                  const showHeader = dateKey !== lastDateKey;
+                  lastDateKey = dateKey;
+                  return (
+                    <div key={f.id}>
+                      {showHeader && (
+                        <p style={{ fontSize: 11, color: "var(--muted-2)", textTransform: "uppercase", margin: "10px 0 4px", fontWeight: 600 }}>
+                          {kickoffDate.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
+                        </p>
+                      )}
+                      <FixtureRow fixture={f} />
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>

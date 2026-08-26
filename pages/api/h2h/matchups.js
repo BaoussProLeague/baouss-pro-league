@@ -53,6 +53,13 @@ export default async function handler(req, res) {
       firstGw: FIRST_H2H_GW,
       lastGw: LAST_H2H_GW,
       isCurrentGw: displayGw === currentGw,
+      // Distinct from isCurrentGw on purpose: before GW2, the "default"
+      // view is GW2 (the first gameweek that actually has fixtures), not
+      // the literal current gameweek (GW1) - isCurrentGw stays reserved
+      // for "is a match from this GW genuinely live right now", while
+      // this one decides whether the Current jump-back button should
+      // show at all.
+      isDefaultGw: displayGw === Math.max(currentGw, FIRST_H2H_GW),
       status,
       matchups,
     });

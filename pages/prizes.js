@@ -69,7 +69,7 @@ export default function Prizes() {
     const d = data.deltas || {};
     if (key === "teamValue") return data.teamValue.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `£${r.value.toFixed(1)}m`, delta: d.teamValue?.[r.entry] }));
     if (key === "benchPoints") return data.benchPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.benchPoints} pts`, delta: d.benchPoints?.[r.entry] }));
-    if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}${r.isLive ? " · live" : ""}` }));
+    if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, gw: r.gwReached, display: `GW${r.gwReached}${r.isLive ? " · live" : ""}` }));
     if (key === "leastTransferCost") return data.leastTransferCost.map((r) => ({ entry: r.entry, entryName: r.entryName, display: r.hitCost > 0 ? `-${r.hitCost} pts` : "0 pts", delta: d.leastTransferCost?.[r.entry] }));
     if (key === "wildcardVision") return data.wildcardVision.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.total} pts${r.complete ? "" : " (in progress)"}` }));
     if (key === "comebackKing") return data.comebackKing.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `+${r.jump} places` }));
@@ -78,7 +78,7 @@ export default function Prizes() {
     if (key === "defGk" && defGk) return defGk.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.totalPoints} pts`, delta: defGkDeltas[r.entry] }));
 
     const chipKey = Object.entries(CHIP_KEY_MAP).find(([, v]) => v === key)?.[0];
-    if (chipKey && data.chips) return data.chips[chipKey].leaderboard.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.score} pts (GW${r.gw})${r.isLive ? " · live" : ""}` }));
+    if (chipKey && data.chips) return data.chips[chipKey].leaderboard.map((r) => ({ entry: r.entry, entryName: r.entryName, gw: r.gw, display: `${r.score} pts (GW${r.gw})${r.isLive ? " · live" : ""}` }));
 
     if (key === "motm" && data.currentMonth && data.motm[data.currentMonth]) {
       return data.motm[data.currentMonth].map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.points} pts` }));
@@ -175,7 +175,7 @@ export default function Prizes() {
                   <tbody>
                     {rows.slice(0, 5).map((row, i) => (
                       <tr key={row.entry}>
-                        <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} href={`/team/${row.entry}`} /><RankArrow delta={row.delta} /></td>
+                        <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} href={row.gw ? `/team/${row.entry}?gw=${row.gw}` : `/team/${row.entry}`} /><RankArrow delta={row.delta} /></td>
                         <td style={{ textAlign: "right" }}>{row.display}</td>
                       </tr>
                     ))}

@@ -115,6 +115,12 @@ export default function H2H() {
                     disabled={matchups.gw <= matchups.firstGw}
                     style={{ padding: "4px 10px", fontSize: 13 }}
                   >←</button>
+                  {!matchups.isDefaultGw && (
+                    <button
+                      onClick={() => { setMatchupsGw(null); loadMatchups(null); }}
+                      style={{ padding: "4px 10px", fontSize: 11 }}
+                    >Current</button>
+                  )}
                   <span className="muted" style={{ fontSize: 12 }}>{matchups.matchups.length} fixture{matchups.matchups.length !== 1 ? "s" : ""}</span>
                   <button
                     onClick={() => { const g = matchups.gw + 1; setMatchupsGw(g); loadMatchups(g); }}
@@ -141,6 +147,7 @@ export default function H2H() {
                         style={{
                           background: "var(--bg-elevated)", borderRadius: 10, padding: "14px 16px",
                           display: "grid", gridTemplateColumns: "100px auto 100px", alignItems: "center", gap: 12,
+                          justifyContent: "center",
                         }}
                       >
                         <div style={{ textAlign: "right" }}>
