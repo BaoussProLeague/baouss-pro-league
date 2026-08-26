@@ -13,7 +13,16 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
   const [fixtures, setFixtures] = useState(null);
+  const [fixturesGw, setFixturesGw] = useState(null);
   const [table, setTable] = useState(null);
+
+  const loadFixtures = (gw) => {
+    const q = gw ? `?gw=${gw}` : "";
+    fetch(`/api/fpl/fixtures${q}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => !d.error && setFixtures(d))
+      .catch(() => {});
+  };
 
   const load = () => {
     setLoading(true);
@@ -32,10 +41,7 @@ export default function Home() {
       .then((d) => !d.error && setSnapshot(d))
       .catch(() => {});
 
-    fetch("/api/fpl/fixtures", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => !d.error && setFixtures(d))
-      .catch(() => {});
+    loadFixtures(fixturesGw);
 
     fetch("/api/fpl/table", { cache: "no-store" })
       .then((r) => r.json())
@@ -71,7 +77,29 @@ export default function Home() {
 
       <div className="grid">
         <div className="card">
-          <h2>{fixtures && fixtures.gwName ? fixtures.gwName : "This gameweek"} fixtures</h2>
+          <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <span>{fixtures && fixtures.gwName ? fixtures.gwName : "This gameweek"} fixtures</span>
+            {fixtures && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => { const g = fixtures.gw - 1; setFixturesGw(g); loadFixtures(g); }}
+                  disabled={fixtures.gw <= fixtures.minGw}
+                  style={{ padding: "4px 10px", fontSize: 13 }}
+                >←</button>
+                {!fixtures.isDefaultGw && (
+                  <button
+                    onClick={() => { setFixturesGw(null); loadFixtures(null); }}
+                    style={{ padding: "4px 10px", fontSize: 11 }}
+                  >Current</button>
+                )}
+                <button
+                  onClick={() => { const g = fixtures.gw + 1; setFixturesGw(g); loadFixtures(g); }}
+                  disabled={fixtures.gw >= fixtures.maxGw}
+                  style={{ padding: "4px 10px", fontSize: 13 }}
+                >→</button>
+              </div>
+            )}
+          </h2>
           {!fixtures || fixtures.fixtures.length === 0 ? (
             <p className="muted">No fixtures found for this gameweek yet.</p>
           ) : (

@@ -70,7 +70,7 @@ export default function Prizes() {
     if (key === "teamValue") return data.teamValue.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `£${r.value.toFixed(1)}m`, delta: d.teamValue?.[r.entry] }));
     if (key === "benchPoints") return data.benchPoints.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.benchPoints} pts`, delta: d.benchPoints?.[r.entry] }));
     if (key === "first1499") return data.first1499.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `GW${r.gwReached}${r.isLive ? " · live" : ""}` }));
-    if (key === "leastTransferCost") return data.leastTransferCost.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `-${r.hitCost} pts`, delta: d.leastTransferCost?.[r.entry] }));
+    if (key === "leastTransferCost") return data.leastTransferCost.map((r) => ({ entry: r.entry, entryName: r.entryName, display: r.hitCost > 0 ? `-${r.hitCost} pts` : "0 pts", delta: d.leastTransferCost?.[r.entry] }));
     if (key === "wildcardVision") return data.wildcardVision.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.total} pts${r.complete ? "" : " (in progress)"}` }));
     if (key === "comebackKing") return data.comebackKing.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `+${r.jump} places` }));
     if (key === "perfectCaptaincy" && captaincy) return captaincy.map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.perfectCalls}/${r.gwsTracked} GWs`, delta: captaincyDeltas[r.entry] }));

@@ -1,5 +1,6 @@
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
+import { gwStatus } from "../../../lib/prizes/liveScores";
 
 // Pulls goal scorers and bonus points (BPS-based) out of a fixture's raw
 // `stats` array. FPL structures this as one entry per stat type, each with
@@ -65,11 +66,25 @@ export default async function handler(req, res) {
   setNoCache(res);
   try {
     const bootstrap = await fpl.bootstrap();
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
-    if (!currentEvent) {
+
+    // Same fix as everywhere else: FPL's own is_current/is_next flags
+    // can lag behind the real state of a gameweek (a gameweek that's
+    // genuinely fully finished can still be flagged "current" for a
+    // while). Determining this ourselves - the first gameweek that
+    // isn't yet "completed" by our own real check - is what actually
+    // makes the display advance to GW2's fixtures the moment GW1 is
+    // truly done, instead of continuing to show a finished gameweek.
+    const sortedEvents = [...bootstrap.events].sort((a, b) => a.id - b.id);
+    const defaultEvent = sortedEvents.find((e) => gwStatus(e) !== "completed") || sortedEvents[sortedEvents.length - 1];
+    if (!defaultEvent) {
       return res.status(200).json({ gw: null, fixtures: [] });
     }
+
+    const requestedGw = req.query.gw ? Number(req.query.gw) : defaultEvent.id;
+    const currentEvent = bootstrap.events.find((e) => e.id === requestedGw) || defaultEvent;
     const gw = currentEvent.id;
+    const minGw = Math.min(...bootstrap.events.map((e) => e.id));
+    const maxGw = Math.max(...bootstrap.events.map((e) => e.id));
 
     const teamsById = new Map(
       bootstrap.teams.map((t) => [t.id, { name: t.name, shortName: t.short_name, code: t.code }])
@@ -102,7 +117,11 @@ export default async function handler(req, res) {
         };
       });
 
-    res.status(200).json({ gw, gwName: currentEvent.name, fixtures });
+    res.status(200).json({
+      gw, gwName: currentEvent.name, fixtures,
+      isDefaultGw: gw === defaultEvent.id,
+      minGw, maxGw,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
