@@ -182,7 +182,11 @@ export default function Prizes() {
                   </tbody>
                 </table></div>
               ) : (
-                <p className="muted">No data yet this season - check back once the relevant gameweeks have been played.</p>
+                <p className="muted">
+                  {prize.key === "rankJumpMonth" && data?.rankJumpIsFirstMonth
+                    ? "This will start from next month - this month's rankings will be the baseline to calculate the jump."
+                    : "No data yet this season - check back once the relevant gameweeks have been played."}
+                </p>
               )}
             </div>
           );

@@ -60,11 +60,16 @@ export default async function handler(req, res) {
     const topHalfCutoff = Math.ceil(entries.length / 2);
 
     const motmByMonth = managerOfTheMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
-    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
+    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, bootstrap.events, status !== "upcoming" ? currentGw : null, liveScoresMap);
 
     // Current month's leaders, for a quick "who's leading right now" view
-    const monthEntries = Object.entries(monthGwMap);
+    const monthEntries = Object.entries(monthGwMap).sort(([, a], [, b]) => Math.min(...a) - Math.min(...b));
     const currentMonthEntry = monthEntries.find(([, gws]) => gws.includes(currentGw)) || monthEntries[monthEntries.length - 1];
+    // Rank Jump specifically has no valid baseline in the season's first
+    // calendar month - flagged separately so the UI can show the exact
+    // "starts next month, this month is the baseline" message rather
+    // than a generic "no data yet."
+    const rankJumpIsFirstMonth = monthEntries.length > 0 && currentMonthEntry && currentMonthEntry[0] === monthEntries[0][0];
 
     const teamValueNow = teamValue(histories);
     const benchPointsNow = benchPoints(histories, null, status !== "upcoming" ? currentGw : null, liveBenchMap);
@@ -88,6 +93,7 @@ export default async function handler(req, res) {
       motm: motmByMonth,
       rankJumpByMonth: rankJumpByMonthResult,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,
+      rankJumpIsFirstMonth,
       topHalfCutoff,
       totalManagers: entries.length,
       deltas: {
