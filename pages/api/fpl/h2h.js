@@ -44,11 +44,18 @@ export default async function handler(req, res) {
     const groupStageOver = currentGw > GROUP_STAGE_LAST_GW;
     const status = gwStatus(currentEvent);
 
-    // Same fallback as every other prize now: don't trust FPL's own
-    // "gameweek finished" status flag as proof that history has caught
-    // up too - fetch the live-verified score (same reliable Classic
-    // standings source) whenever the gameweek has started, and let the
-    // per-fixture lookup decide whether it's actually needed.
+    // The actual bug: standings were always including the current
+    // gameweek's fixtures, live score and all - which meant a genuinely
+    // still-changing scoreline got immediately converted into a final,
+    // points-awarding win/draw/loss before the match was actually
+    // decided. A live SCORE is fine to show (that's what the matchups
+    // view does, correctly) - but standings are a declared RESULT, and
+    // that should only ever come from a gameweek that's genuinely,
+    // fully finished. This finds the most recent gameweek that actually
+    // is, and freezes standings there until the current one joins it.
+    const completedGws = bootstrap.events.filter((e) => gwStatus(e) === "completed").map((e) => e.id);
+    const lastCompletedGw = completedGws.length > 0 ? Math.max(...completedGws) : 0;
+
     let liveScoresMap = null;
     if (status !== "upcoming" && !groupStageOver) {
       const { entries: classicEntries } = await fpl.allClassicEntries(leagueId);
@@ -56,12 +63,13 @@ export default async function handler(req, res) {
       liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
     }
 
-    const uptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : currentGw;
+    const uptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : lastCompletedGw;
     const ranked = computeCustomH2hStandings(fixtures, histories, uptoGw, currentGw, liveScoresMap);
 
     // Last week's standings, purely to diff against this week's for the
     // rank-change arrows - frozen once the group stage itself is frozen.
-    const prevUptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : Math.max(1, currentGw - 1);
+    const prevCompletedGws = completedGws.filter((g) => g < lastCompletedGw);
+    const prevUptoGw = groupStageOver ? GROUP_STAGE_LAST_GW : (prevCompletedGws.length > 0 ? Math.max(...prevCompletedGws) : 0);
     const rankedPrev = computeCustomH2hStandings(fixtures, histories, prevUptoGw, currentGw, liveScoresMap);
     const deltas = computeRankDeltas(ranked, rankedPrev);
 

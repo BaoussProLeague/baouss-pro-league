@@ -91,7 +91,7 @@ export default function H2H() {
         <>
           {!data.hasStarted && (
             <div className="card muted" style={{ borderColor: "var(--accent)", padding: "12px 20px" }}>
-              Scoring starts in GW2.
+              Standings update once GW2 is fully complete - live scores don't finalize into results until then.
             </div>
           )}
 
@@ -175,7 +175,7 @@ export default function H2H() {
           <div className="grid">
             <div className="card">
               <h2>Gold Cup Qualifiers (Rank 1-16)</h2>
-              {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>}
+              {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Standings update once GW2 is fully complete - live scores don't finalize into results until then.</p>}
               <div className="table-scroll"><table>
                 <thead><tr><th>Rank</th><th>Team</th></tr></thead>
                 <tbody>
@@ -188,7 +188,7 @@ export default function H2H() {
             <div className="card">
               <h2>Silver Cup Qualifiers (Rank 17-32)</h2>
               {!data.hasStarted ? (
-                <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>
+                <p className="muted" style={{ marginBottom: 10 }}>Standings update once GW2 is fully complete - live scores don't finalize into results until then.</p>
               ) : data.cupQualification.silver.length === 0 ? (
                 <p className="muted" style={{ marginBottom: 10 }}>Fewer than 17 managers have a ranked H2H record yet - Silver fills in as more matches are played.</p>
               ) : null}
@@ -205,7 +205,7 @@ export default function H2H() {
 
           <div className="card">
             <h2>{data.groupStageOver ? `Final Group Table (GW${data.groupStageSnapshotGw})` : "Group Table (live)"}</h2>
-            {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Scoring starts in GW2.</p>}
+            {!data.hasStarted && <p className="muted" style={{ marginBottom: 10 }}>Standings update once GW2 is fully complete - live scores don't finalize into results until then.</p>}
             <div className="table-scroll"><table>
               <thead>
                 <tr><th>Rank</th><th>Team</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>
