@@ -6,6 +6,16 @@ export default function Lms() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [gwScores, setGwScores] = useState(null);
+  const [gwScoresGw, setGwScoresGw] = useState(null);
+
+  const loadGwScores = (gw) => {
+    const q = gw ? `?gw=${gw}` : "";
+    fetch(`/api/lms/gw-scores${q}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => !d.error && setGwScores(d))
+      .catch(() => {});
+  };
 
   const load = () => {
     setLoading(true);
@@ -15,6 +25,8 @@ export default function Lms() {
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    loadGwScores(gwScoresGw);
   };
 
   useAutoRefresh(load, 60000);
@@ -72,6 +84,38 @@ export default function Lms() {
               </tbody>
             </table></div>
           </div>
+
+          {gwScores && gwScores.gw && (
+            <div className="card">
+              <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                <span>GW{gwScores.gw} scores</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button
+                    onClick={() => { const g = gwScores.gw - 1; setGwScoresGw(g); loadGwScores(g); }}
+                    disabled={gwScores.gw <= gwScores.minGw}
+                    style={{ padding: "4px 10px", fontSize: 13 }}
+                  >←</button>
+                  <button
+                    onClick={() => { const g = gwScores.gw + 1; setGwScoresGw(g); loadGwScores(g); }}
+                    disabled={gwScores.gw >= gwScores.maxGw}
+                    style={{ padding: "4px 10px", fontSize: 13 }}
+                  >→</button>
+                </div>
+              </h2>
+              <div className="table-scroll"><table>
+                <thead><tr><th>Team</th><th>Score</th><th></th></tr></thead>
+                <tbody>
+                  {gwScores.scores.map((s) => (
+                    <tr key={s.entry} style={s.eliminatedThisGw ? { color: "var(--danger)" } : undefined}>
+                      <td><TruncateText text={s.entryName} maxWidth={200} href={`/team/${s.entry}?gw=${gwScores.gw}`} /></td>
+                      <td>{s.points ?? "—"}</td>
+                      <td>{s.eliminatedThisGw && <span className="pill out">Eliminated</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table></div>
+            </div>
+          )}
 
           <div className="card">
             <h2>Eliminated</h2>

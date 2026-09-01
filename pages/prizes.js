@@ -158,7 +158,7 @@ export default function Prizes() {
 
       {data && data.motmCompletedMonths && data.motmCompletedMonths.length > 0 && (
         <div className="card">
-          <h2>Manager of the Month - past winners</h2>
+          <h2>Manager of the Month</h2>
           <div className="table-scroll"><table>
             <thead><tr><th>Month</th><th>Winner</th><th>Points</th></tr></thead>
             <tbody>
@@ -175,7 +175,7 @@ export default function Prizes() {
       )}
 
       <div className="grid">
-        {PRIZE_CATALOG.filter((p) => p.key !== "classic" && p.key !== "lms" && p.key !== "h2h" && p.key !== "megaGw").map((prize) => {
+        {PRIZE_CATALOG.filter((p) => p.key !== "classic" && p.key !== "lms" && p.key !== "h2h" && p.key !== "megaGw" && p.key !== "motm").map((prize) => {
           const rows = rowsFor(prize.key);
           const live = isPrizeLive(prize.key, data, data?.chips);
           return (
@@ -188,16 +188,7 @@ export default function Prizes() {
                 {live && <span className="pill alive">LIVE</span>}
               </div>
 
-              {prize.key === "motm" && data?.currentMonthIsComplete && rows && rows.length > 0 ? (
-                <div>
-                  <span className="pill alive" style={{ marginBottom: 10, display: "inline-block" }}>Winner confirmed</span>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 22 }}>🏆</span>
-                    <TruncateText text={rows[0].entryName} maxWidth={220} href={rows[0].gw ? `/team/${rows[0].entry}?gw=${rows[0].gw}` : `/team/${rows[0].entry}`} />
-                  </div>
-                  <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>{rows[0].display}</p>
-                </div>
-              ) : rows && rows.length > 0 ? (
+              {rows && rows.length > 0 ? (
                 <div className="table-scroll"><table>
                   <tbody>
                     {rows.slice(0, 5).map((row, i) => (
