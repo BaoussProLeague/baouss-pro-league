@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
-import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 
 // Returns: who is still alive, who's eliminated (and when), who's rebought.
 // This reads state Supabase already has - it does NOT run the elimination
@@ -25,22 +25,37 @@ export default async function handler(req, res) {
     const eliminatedIds = new Set((eliminations || []).map((e) => e.entry_id));
     const stillAlive = entries.filter((e) => !eliminatedIds.has(e.entry));
 
-    // Purely informational - lets people watch who's currently trending
-    // toward the bottom during a live gameweek. Does NOT feed into the
-    // actual elimination decision, which only ever runs once the
-    // gameweek is genuinely, fully finalized (see runLmsForGw).
     const bootstrap = await fpl.bootstrap();
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // getEffectiveCurrentGw falls back to finished+data_checked automatically
+    }
+    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData);
+    const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const status = gwStatus(currentEvent);
+
+    // The actual bug: this showed live points/danger for the current
+    // gameweek even after that gameweek's elimination had already been
+    // decided and recorded - the danger zone concept doesn't mean
+    // anything once the actual decision is already locked in. Checking
+    // whether THIS gameweek already has an elimination row is what
+    // correctly turns the danger display off once it's genuinely done,
+    // rather than continuing to show stale "who might be eliminated"
+    // data for a decision that's already been made.
+    const alreadyDecidedForCurrentGw = (eliminations || []).some((e) => e.gw_eliminated === currentGw);
+    const eliminationPending = status === "live" && !alreadyDecidedForCurrentGw;
+
     let livePointsByEntry = new Map();
-    if (status !== "upcoming") {
+    if (eliminationPending) {
       const liveScores = getLiveGwScoresFromStandings(entries);
       livePointsByEntry = new Map(liveScores.map((s) => [s.entry, s.points]));
     }
 
     res.status(200).json({
-      currentGw: currentEvent ? currentEvent.id : null,
-      gwIsLive: status === "live",
+      currentGw,
+      gwIsLive: eliminationPending,
       stillAliveCount: stillAlive.length,
       stillAlive: stillAlive.map((e) => ({
         entry: e.entry,

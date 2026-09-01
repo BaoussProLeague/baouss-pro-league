@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getLatestStartedGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getLatestStartedGw, isGwFinalizedFromStatus } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -82,6 +82,21 @@ export default async function handler(req, res) {
     // than a generic "no data yet."
     const rankJumpIsFirstMonth = monthEntries.length > 0 && currentMonthEntry && currentMonthEntry[0] === monthEntries[0][0];
 
+    // A month is genuinely decided once every one of its gameweeks is
+    // fully finalized - not just "the calendar month has passed," since
+    // a GW right at the boundary could still be waiting on FPL's own
+    // confirmation. Used to tell "this month's winner is locked in" from
+    // "this is still a live, in-progress race."
+    const isMonthComplete = (gws) => gws.every((gw) => isGwFinalizedFromStatus(eventStatusData, gw, bootstrap.events));
+    const motmCompletedMonths = monthEntries
+      .filter(([, gws]) => isMonthComplete(gws))
+      .map(([month, gws]) => {
+        const leaderboard = motmByMonth[month] || [];
+        return { month, winner: leaderboard[0] || null };
+      })
+      .filter((m) => m.winner);
+    const currentMonthIsComplete = currentMonthEntry ? isMonthComplete(currentMonthEntry[1]) : false;
+
     const teamValueNow = teamValue(histories);
     const benchPointsNow = benchPoints(histories, null, status !== "upcoming" ? currentGw : null, liveBenchMap);
     const leastTransferCostNow = leastTransferCost(histories, standingsForRank, topHalfCutoff);
@@ -105,6 +120,8 @@ export default async function handler(req, res) {
       rankJumpByMonth: rankJumpByMonthResult,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,
       rankJumpIsFirstMonth,
+      motmCompletedMonths,
+      currentMonthIsComplete,
       topHalfCutoff,
       totalManagers: entries.length,
       deltas: {
