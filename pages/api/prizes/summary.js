@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getLatestStartedGw } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -25,7 +25,12 @@ export default async function handler(req, res) {
     } catch {
       // getEffectiveCurrentGw / isGwFinalizedFromStatus fall back to finished+data_checked automatically
     }
-    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData) || 1;
+    // getLatestStartedGw, not getEffectiveCurrentGw - every prize here
+    // tracks "current/live contribution," not "which gameweek's
+    // fixtures to default-show." Using the fixtures-style advance-early
+    // logic caused MOTM to jump to GW3/September the instant GW2
+    // finalized, showing 0 for everyone since September has no data yet.
+    const currentGw = getLatestStartedGw(bootstrap.events) || 1;
     const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const status = gwStatus(currentEvent);
     // Bug found during audit: this only subtracted a gameweek for

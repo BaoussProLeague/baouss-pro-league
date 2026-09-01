@@ -83,16 +83,17 @@ export function DeadlineCountdownCard() {
   if (!data || !countdown || !data.nextGw) return null;
 
   return (
-    <div className="card" style={{ textAlign: "center" }}>
-      <h2>GW{data.nextGw} deadline</h2>
-      <div style={{ display: "flex", gap: 18, justifyContent: "center", marginTop: 12 }}>
+    <div className="card" style={{ textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+      <h2 style={{ fontSize: 15, letterSpacing: 1 }}>GW{data.nextGw} deadline in</h2>
+      <div style={{ display: "flex", gap: 24, justifyContent: "center", marginTop: 16 }}>
         {[["Days", countdown.days], ["Hours", countdown.hours], ["Minutes", countdown.minutes], ["Seconds", countdown.seconds]].map(([label, val]) => (
-          <div key={label} style={{ textAlign: "center", minWidth: 60 }}>
+          <div key={label} style={{ textAlign: "center", minWidth: 70 }}>
             <div style={{
-              fontSize: 36, fontWeight: 800, fontFamily: "monospace",
+              fontSize: 48, fontWeight: 800, fontFamily: "monospace",
               background: "linear-gradient(135deg, var(--accent), var(--accent-bright))",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
               backgroundClip: "text",
+              textShadow: "0 0 30px rgba(240, 187, 74, 0.35)",
             }}>
               {pad(val)}
             </div>

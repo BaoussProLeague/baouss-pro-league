@@ -2,7 +2,7 @@ import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 import { loadAllHistories, managerOfTheMonth } from "../../../lib/prizes/fromHistory";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getLatestStartedGw } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
@@ -18,13 +18,13 @@ export default async function handler(req, res) {
     // truth for "points this calendar month" instead of two versions
     // that could drift apart.
     const bootstrap = await fpl.bootstrap();
-    let eventStatusData = null;
-    try {
-      eventStatusData = await fpl.eventStatus();
-    } catch {
-      // getEffectiveCurrentGw falls back to finished+data_checked automatically
-    }
-    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData);
+    // getLatestStartedGw, not getEffectiveCurrentGw - month-tracking
+    // needs "the latest gameweek genuinely underway," not "the next
+    // gameweek to default-show fixtures for." Using the fixtures-style
+    // advance-early logic here was exactly what caused this to jump to
+    // GW3/September the instant GW2 finalized, showing 0 for everyone
+    // since September has no data yet.
+    const currentGw = getLatestStartedGw(bootstrap.events);
     const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const status = gwStatus(currentEvent);
 

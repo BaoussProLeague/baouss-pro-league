@@ -548,12 +548,17 @@ export default function Admin() {
           <p className="muted">No runs recorded yet.</p>
         ) : (
           <div className="table-scroll"><table>
-            <thead><tr><th>GW</th><th>Job</th><th>Last ran</th><th>Status</th></tr></thead>
+            <thead><tr><th>GW</th><th>Job</th><th>FPL Status</th><th>Last ran</th><th>Our Status</th></tr></thead>
             <tbody>
               {computationStatus.map((s) => (
                 <tr key={`${s.gw}-${s.job_type}`}>
                   <td>{s.gw}</td>
                   <td>{s.job_type}</td>
+                  <td>
+                    <span className={s.fplStatus === "Confirmed" ? "pill alive" : "pill admin"}>
+                      {s.fplStatus}
+                    </span>
+                  </td>
                   <td>{s.last_run_date || "—"}</td>
                   <td>{s.locked ? <span className="pill alive">Locked - final</span> : <span className="pill admin">Still updating daily</span>}</td>
                 </tr>

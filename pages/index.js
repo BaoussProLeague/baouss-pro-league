@@ -81,8 +81,8 @@ export default function Home() {
 
       {loading && !error && <div className="card muted">Loading standings…</div>}
 
-      <div className="grid">
-        <div className="card">
+      <div className="grid" style={{ alignItems: "stretch" }}>
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
           <h2 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
             <span>{fixtures && fixtures.gwName ? fixtures.gwName : "This gameweek"} fixtures</span>
             {fixtures && (
@@ -127,7 +127,7 @@ export default function Home() {
           {!fixtures || fixtures.fixtures.length === 0 ? (
             <p className="muted">No fixtures found for this gameweek yet.</p>
           ) : (
-            <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               {(() => {
                 let lastDateKey = null;
                 return fixtures.fixtures.map((f) => {
@@ -151,12 +151,12 @@ export default function Home() {
           )}
         </div>
 
-        <div className="card">
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
           <h2>Premier League table</h2>
           {!table || table.length === 0 ? (
             <p className="muted">Table not available yet.</p>
           ) : (
-            <div className="table-scroll" style={{ maxHeight: 320, overflowY: "auto" }}>
+            <div className="table-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
               <table>
                 <thead>
                   <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
