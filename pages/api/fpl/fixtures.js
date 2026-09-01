@@ -1,6 +1,6 @@
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
-import { gwStatus } from "../../../lib/prizes/liveScores";
+import { getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 
 // Pulls goal scorers and bonus points (BPS-based) out of a fixture's raw
 // `stats` array. FPL structures this as one entry per stat type, each with
@@ -70,12 +70,20 @@ export default async function handler(req, res) {
     // Same fix as everywhere else: FPL's own is_current/is_next flags
     // can lag behind the real state of a gameweek (a gameweek that's
     // genuinely fully finished can still be flagged "current" for a
-    // while). Determining this ourselves - the first gameweek that
-    // isn't yet "completed" by our own real check - is what actually
-    // makes the display advance to GW2's fixtures the moment GW1 is
-    // truly done, instead of continuing to show a finished gameweek.
-    const sortedEvents = [...bootstrap.events].sort((a, b) => a.id - b.id);
-    const defaultEvent = sortedEvents.find((e) => gwStatus(e) !== "completed") || sortedEvents[sortedEvents.length - 1];
+    // while). Determining this ourselves - the first gameweek that isn't
+    // yet genuinely finalized (matches FPL's own
+    // "PROVISIONAL"/"CONFIRMED" signal exactly) - is what makes the
+    // display correctly advance to GW3's upcoming fixtures the moment
+    // GW2 is truly done, not just when FPL's own internal flags happen
+    // to catch up.
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // getEffectiveCurrentGw falls back to finished+data_checked automatically
+    }
+    const defaultGwId = getEffectiveCurrentGw(bootstrap.events, eventStatusData);
+    const defaultEvent = bootstrap.events.find((e) => e.id === defaultGwId) || bootstrap.events[bootstrap.events.length - 1];
     if (!defaultEvent) {
       return res.status(200).json({ gw: null, fixtures: [] });
     }

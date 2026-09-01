@@ -1,6 +1,6 @@
 import { fpl } from "../../../lib/fpl";
 import { supabaseAdmin } from "../../../lib/supabase";
-import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const FIRST_H2H_GW = 2;
@@ -11,8 +11,17 @@ export default async function handler(req, res) {
 
   try {
     const bootstrap = await fpl.bootstrap();
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
-    const currentGw = currentEvent ? currentEvent.id : 1;
+    // Same fix as the Classic fixtures card and the nav badge: FPL's own
+    // is_current/is_next flags can lag behind genuine finalization,
+    // which is exactly why this kept showing GW2 after it was actually
+    // done. Using the shared, confirmed-accurate check instead.
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // getEffectiveCurrentGw falls back to finished+data_checked automatically
+    }
+    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData) || 1;
 
     // The schedule only covers GW2-GW30 - before GW2, there's nothing to
     // show for "this GW" specifically, which is exactly why the card was

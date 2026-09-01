@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -19,8 +19,14 @@ export default async function handler(req, res) {
 
     const bootstrap = await fpl.bootstrap();
     const monthGwMap = buildMonthGwMap(bootstrap.events);
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
-    const currentGw = currentEvent ? currentEvent.id : 1;
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // getEffectiveCurrentGw / isGwFinalizedFromStatus fall back to finished+data_checked automatically
+    }
+    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData) || 1;
+    const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const status = gwStatus(currentEvent);
     // Bug found during audit: this only subtracted a gameweek for
     // "upcoming" status, treating "live" the same as "completed" - so
@@ -60,7 +66,7 @@ export default async function handler(req, res) {
     const topHalfCutoff = Math.ceil(entries.length / 2);
 
     const motmByMonth = managerOfTheMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
-    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, bootstrap.events, status !== "upcoming" ? currentGw : null, liveScoresMap);
+    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, bootstrap.events, status !== "upcoming" ? currentGw : null, liveScoresMap, eventStatusData);
 
     // Current month's leaders, for a quick "who's leading right now" view
     const monthEntries = Object.entries(monthGwMap).sort(([, a], [, b]) => Math.min(...a) - Math.min(...b));

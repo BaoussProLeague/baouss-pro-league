@@ -2,7 +2,7 @@ import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 import { loadAllHistories, managerOfTheMonth } from "../../../lib/prizes/fromHistory";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
@@ -18,8 +18,14 @@ export default async function handler(req, res) {
     // truth for "points this calendar month" instead of two versions
     // that could drift apart.
     const bootstrap = await fpl.bootstrap();
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
-    const currentGw = currentEvent ? currentEvent.id : null;
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // getEffectiveCurrentGw falls back to finished+data_checked automatically
+    }
+    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData);
+    const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const status = gwStatus(currentEvent);
 
     const simpleEntries = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name }));

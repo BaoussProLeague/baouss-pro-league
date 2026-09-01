@@ -24,7 +24,49 @@ function useCountdown(targetIso) {
 
 function pad(n) { return String(n).padStart(2, "0"); }
 
-export default function GwStatusBar() {
+export function GwStatusCard() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const load = () => {
+      fetch("/api/fpl/gw-status", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => !d.error && setData(d))
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!data || !data.gw) return null;
+
+  return (
+    <div className="card">
+      <h2>GW{data.gw} status</h2>
+      {data.days.length === 0 ? (
+        <p className="muted">Not started yet.</p>
+      ) : (
+        <div className="table-scroll"><table>
+          <thead><tr><th>Day</th><th>Status</th></tr></thead>
+          <tbody>
+            {data.days.map((d) => (
+              <tr key={d.date}>
+                <td>{new Date(d.date).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short" })}</td>
+                <td><span className={d.bonusAdded ? "pill alive" : "pill admin"}>{d.bonusAdded ? "Confirmed" : "Provisional"}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table></div>
+      )}
+      {data.finalized && data.days.length > 0 && (
+        <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>All days confirmed - GW{data.gw}'s prizes, LMS, and H2H results are final.</p>
+      )}
+    </div>
+  );
+}
+
+export function DeadlineCountdownCard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -41,46 +83,26 @@ export default function GwStatusBar() {
 
   const countdown = useCountdown(data?.nextDeadline);
 
-  if (!data) return null;
+  if (!data || !countdown || !data.nextGw) return null;
 
   return (
-    <div className="card" style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "center", justifyContent: "space-between" }}>
-      {data.gw && (
-        <div>
-          <div className="label" style={{ fontSize: 11, textTransform: "uppercase", color: "var(--muted-2)", marginBottom: 6 }}>
-            GW{data.gw} status
-          </div>
-          {data.days.length === 0 ? (
-            <span className="pill admin">Not started yet</span>
-          ) : data.finalized ? (
-            <span className="pill alive">Confirmed - all bonus points final</span>
-          ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {data.days.map((d) => (
-                <span key={d.date} className={d.bonusAdded ? "pill alive" : "pill admin"} style={{ fontSize: 11 }}>
-                  {new Date(d.date).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}: {d.bonusAdded ? "Confirmed" : "Provisional"}
-                </span>
-              ))}
+    <div className="card" style={{ textAlign: "center" }}>
+      <h2>GW{data.nextGw} deadline</h2>
+      <div style={{ display: "flex", gap: 18, justifyContent: "center", marginTop: 12 }}>
+        {[["Days", countdown.days], ["Hours", countdown.hours], ["Minutes", countdown.minutes], ["Seconds", countdown.seconds]].map(([label, val]) => (
+          <div key={label} style={{ textAlign: "center", minWidth: 60 }}>
+            <div style={{
+              fontSize: 36, fontWeight: 800, fontFamily: "monospace",
+              background: "linear-gradient(135deg, var(--accent), var(--accent-bright))",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              {pad(val)}
             </div>
-          )}
-        </div>
-      )}
-
-      {countdown && data.nextGw && (
-        <div>
-          <div className="label" style={{ fontSize: 11, textTransform: "uppercase", color: "var(--muted-2)", marginBottom: 6, textAlign: "right" }}>
-            GW{data.nextGw} deadline in
+            <div style={{ fontSize: 11, color: "var(--muted-2)", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{label}</div>
           </div>
-          <div style={{ display: "flex", gap: 10, fontFamily: "monospace" }}>
-            {[["D", countdown.days], ["H", countdown.hours], ["M", countdown.minutes], ["S", countdown.seconds]].map(([label, val]) => (
-              <div key={label} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 20, fontWeight: 700 }}>{pad(val)}</div>
-                <div style={{ fontSize: 10, color: "var(--muted-2)" }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }

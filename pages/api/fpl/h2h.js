@@ -3,7 +3,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
-import { getLiveGwScoresFromStandings, gwStatus, isGwFinalizedFromStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, isGwFinalizedFromStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const GROUP_STAGE_LAST_GW = 30;
@@ -39,8 +39,21 @@ export default async function handler(req, res) {
     const histories = await loadAllHistories(simpleEntries);
 
     const bootstrap = await fpl.bootstrap();
-    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
-    const currentGw = currentEvent ? currentEvent.id : 1;
+
+    // Fetched once here and reused for both "what's the current gw" and
+    // "which gameweeks are fully completed" below - same signal FPL's
+    // own site uses for its "PROVISIONAL" label, replacing is_current/
+    // is_next, which can lag behind genuine finalization (that lag is
+    // exactly what caused standings to disagree with the matchups view
+    // about what gameweek was "current").
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // isGwFinalizedFromStatus falls back to finished+data_checked automatically
+    }
+    const currentGw = getEffectiveCurrentGw(bootstrap.events, eventStatusData) || 1;
+    const currentEvent = bootstrap.events.find((e) => e.id === currentGw);
     const groupStageOver = currentGw > GROUP_STAGE_LAST_GW;
     const status = gwStatus(currentEvent);
 
@@ -53,16 +66,6 @@ export default async function handler(req, res) {
     // that should only ever come from a gameweek that's genuinely,
     // fully finished. This finds the most recent gameweek that actually
     // is, and freezes standings there until the current one joins it.
-    // Upgraded from checking event.finished alone to the same signal
-    // FPL's own site uses for its "PROVISIONAL" label - fetched once
-    // here and reused for every gameweek being checked, rather than
-    // re-fetching per gameweek.
-    let eventStatusData = null;
-    try {
-      eventStatusData = await fpl.eventStatus();
-    } catch {
-      // isGwFinalizedFromStatus falls back to finished+data_checked automatically
-    }
     const eventsWithMatches = bootstrap.events.filter((e) => gwStatus(e) !== "upcoming");
     const completedGws = eventsWithMatches
       .filter((e) => isGwFinalizedFromStatus(eventStatusData, e.id, bootstrap.events))
