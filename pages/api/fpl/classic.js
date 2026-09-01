@@ -1,5 +1,8 @@
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
+import { loadAllHistories, managerOfTheMonth } from "../../../lib/prizes/fromHistory";
+import { buildMonthGwMap } from "../../../lib/monthCalendar";
+import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
@@ -9,8 +12,37 @@ export default async function handler(req, res) {
   }
   try {
     const { league, entries } = await fpl.allClassicEntries(leagueId);
+
+    // Current month's running total (live), reusing the exact same
+    // computation Manager of the Month already uses - one source of
+    // truth for "points this calendar month" instead of two versions
+    // that could drift apart.
+    const bootstrap = await fpl.bootstrap();
+    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
+    const currentGw = currentEvent ? currentEvent.id : null;
+    const status = gwStatus(currentEvent);
+
+    const simpleEntries = entries.map((e) => ({ entry: e.entry, entryName: e.entry_name }));
+    const histories = await loadAllHistories(simpleEntries);
+    const monthGwMap = buildMonthGwMap(bootstrap.events);
+
+    let liveScoresMap = null;
+    if (status !== "upcoming") {
+      const liveScores = getLiveGwScoresFromStandings(entries);
+      liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
+    }
+
+    const monthEntries = Object.entries(monthGwMap).sort(([, a], [, b]) => Math.min(...a) - Math.min(...b));
+    const currentMonthEntry = monthEntries.find(([, gws]) => gws.includes(currentGw));
+    const monthByEntry = new Map();
+    if (currentMonthEntry) {
+      const motmAllMonths = managerOfTheMonth(histories, { [currentMonthEntry[0]]: currentMonthEntry[1] }, currentGw, liveScoresMap);
+      (motmAllMonths[currentMonthEntry[0]] || []).forEach((r) => monthByEntry.set(r.entry, r.points));
+    }
+
     res.status(200).json({
       league: { id: league.id, name: league.name },
+      currentMonthLabel: currentMonthEntry ? currentMonthEntry[0] : null,
       standings: entries.map((e) => ({
         entry: e.entry,
         entryName: e.entry_name,
@@ -19,6 +51,7 @@ export default async function handler(req, res) {
         lastRank: e.last_rank,
         totalPoints: e.total,
         gwPoints: e.event_total,
+        monthPoints: monthByEntry.has(e.entry) ? monthByEntry.get(e.entry) : null,
       })),
     });
   } catch (err) {

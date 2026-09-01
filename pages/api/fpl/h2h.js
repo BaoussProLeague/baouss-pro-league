@@ -3,7 +3,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
-import { getLiveGwScoresFromStandings, gwStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, isGwFinalizedFromStatus } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
 const GROUP_STAGE_LAST_GW = 30;
@@ -53,7 +53,20 @@ export default async function handler(req, res) {
     // that should only ever come from a gameweek that's genuinely,
     // fully finished. This finds the most recent gameweek that actually
     // is, and freezes standings there until the current one joins it.
-    const completedGws = bootstrap.events.filter((e) => gwStatus(e) === "completed").map((e) => e.id);
+    // Upgraded from checking event.finished alone to the same signal
+    // FPL's own site uses for its "PROVISIONAL" label - fetched once
+    // here and reused for every gameweek being checked, rather than
+    // re-fetching per gameweek.
+    let eventStatusData = null;
+    try {
+      eventStatusData = await fpl.eventStatus();
+    } catch {
+      // isGwFinalizedFromStatus falls back to finished+data_checked automatically
+    }
+    const eventsWithMatches = bootstrap.events.filter((e) => gwStatus(e) !== "upcoming");
+    const completedGws = eventsWithMatches
+      .filter((e) => isGwFinalizedFromStatus(eventStatusData, e.id, bootstrap.events))
+      .map((e) => e.id);
     const lastCompletedGw = completedGws.length > 0 ? Math.max(...completedGws) : 0;
 
     let liveScoresMap = null;

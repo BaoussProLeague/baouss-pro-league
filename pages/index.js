@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import FixtureRow from "../components/FixtureRow";
+import GwStatusBar from "../components/GwStatusBar";
 import TruncateText from "../components/TruncateText";
 import RankArrow from "../components/RankArrow";
 
@@ -65,6 +66,8 @@ export default function Home() {
           </p>
         )}
       </div>
+
+      <GwStatusBar />
 
       {error && (
         <div className="card error">
@@ -235,7 +238,7 @@ export default function Home() {
             <div className="table-scroll">
               <table>
                 <thead>
-                  <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>Total Pts</th></tr>
+                  <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>{data.currentMonthLabel || "Month"} Pts</th><th>Total Pts</th></tr>
                 </thead>
                 <tbody>
                   {data.standings.map((row) => (
@@ -244,6 +247,7 @@ export default function Home() {
                       <td><TruncateText text={row.managerName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td><TruncateText text={row.entryName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td>{row.gwPoints}</td>
+                      <td>{row.monthPoints ?? "—"}</td>
                       <td><strong>{row.totalPoints}</strong></td>
                     </tr>
                   ))}

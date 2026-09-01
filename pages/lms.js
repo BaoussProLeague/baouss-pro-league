@@ -42,12 +42,20 @@ export default function Lms() {
       {data && (
         <>
           <div className="card">
-            <h2>Still Alive ({data.stillAliveCount})</h2>
+            <h2 style={{ display: "flex", alignItems: "center" }}>
+              Still Alive ({data.stillAliveCount})
+              {data.gwIsLive && <span className="pill alive" style={{ marginLeft: 8 }}>GW{data.currentGw} LIVE</span>}
+            </h2>
+            {data.gwIsLive && <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>Live points below are informational only - who actually gets eliminated is only decided once GW{data.currentGw} is fully confirmed by FPL, not from this live view.</p>}
             <div className="table-scroll"><table>
-              <thead><tr><th>Team</th><th>Status</th></tr></thead>
+              <thead><tr><th>Team</th><th>Status</th><th>GW{data.currentGw} Live Pts</th></tr></thead>
               <tbody>
                 {data.stillAlive.map((e) => (
-                  <tr key={e.entry}><td><TruncateText text={e.entryName} maxWidth={200} href={`/team/${e.entry}`} /></td><td><span className="pill alive">Alive</span></td></tr>
+                  <tr key={e.entry}>
+                    <td><TruncateText text={e.entryName} maxWidth={200} href={`/team/${e.entry}`} /></td>
+                    <td><span className="pill alive">Alive</span></td>
+                    <td>{e.currentGwPoints ?? "—"}</td>
+                  </tr>
                 ))}
               </tbody>
             </table></div>
