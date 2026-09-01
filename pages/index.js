@@ -156,7 +156,7 @@ export default function Home() {
           {!table || table.length === 0 ? (
             <p className="muted">Table not available yet.</p>
           ) : (
-            <div className="table-scroll" style={{ maxHeight: 260, overflowY: "auto" }}>
+            <div className="table-scroll" style={{ maxHeight: 320, overflowY: "auto" }}>
               <table>
                 <thead>
                   <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>
@@ -241,7 +241,7 @@ export default function Home() {
             <div className="table-scroll">
               <table>
                 <thead>
-                  <tr><th>Rank</th><th>Manager</th><th>Team</th><th>GW Pts</th><th>Month Total</th><th>Total Pts</th></tr>
+                  <tr><th>Rank</th><th>Manager</th><th>Team</th><th style={{ textAlign: "center" }}>GW Pts</th><th style={{ textAlign: "center" }}>Month Total</th><th style={{ textAlign: "center" }}>Total Pts</th></tr>
                 </thead>
                 <tbody>
                   {data.standings.map((row) => (
@@ -249,9 +249,9 @@ export default function Home() {
                       <td>{row.rank}<RankArrow delta={row.lastRank ? (row.rank < row.lastRank ? "up" : row.rank > row.lastRank ? "down" : "same") : null} /></td>
                       <td><TruncateText text={row.managerName} maxWidth={140} href={`/team/${row.entry}`} /></td>
                       <td><TruncateText text={row.entryName} maxWidth={140} href={`/team/${row.entry}`} /></td>
-                      <td>{row.gwPoints}</td>
-                      <td>{row.monthPoints ?? "—"}</td>
-                      <td><strong>{row.totalPoints}</strong></td>
+                      <td style={{ textAlign: "center" }}>{row.gwPoints}</td>
+                      <td style={{ textAlign: "center" }}>{row.monthPoints ?? "—"}</td>
+                      <td style={{ textAlign: "center" }}><strong>{row.totalPoints}</strong></td>
                     </tr>
                   ))}
                 </tbody>

@@ -49,6 +49,29 @@ export default async function handler(req, res) {
     if (displayGw === currentGw && status !== "upcoming") {
       const liveScores = getLiveGwScoresFromStandings(classicEntries);
       scoreById = new Map(liveScores.map((s) => [s.entry, s.points]));
+    } else if (displayGw < currentGw) {
+      // A genuinely past gameweek - history is fully reliable here, so
+      // pull each manager's actual final score for it instead of
+      // showing empty dashes. Only fetching for the managers who
+      // actually appear in this gameweek's fixtures, not the whole
+      // league, to keep this cheap.
+      const entryIds = new Set();
+      (fixturesThisGw || []).forEach((m) => {
+        entryIds.add(m.entry_id_1);
+        entryIds.add(m.entry_id_2);
+      });
+      const histories = await Promise.all(
+        Array.from(entryIds).map(async (entryId) => {
+          try {
+            const h = await fpl.entryHistory(entryId);
+            const row = h.current.find((r) => r.event === displayGw);
+            return { entryId, points: row ? row.points : null };
+          } catch {
+            return { entryId, points: null };
+          }
+        })
+      );
+      scoreById = new Map(histories.map((h) => [h.entryId, h.points]));
     }
 
     const matchups = (fixturesThisGw || []).map((m) => ({

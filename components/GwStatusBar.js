@@ -59,9 +59,6 @@ export function GwStatusCard() {
           </tbody>
         </table></div>
       )}
-      {data.finalized && data.days.length > 0 && (
-        <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>All days confirmed - GW{data.gw}'s prizes, LMS, and H2H results are final.</p>
-      )}
     </div>
   );
 }
