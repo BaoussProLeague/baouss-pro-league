@@ -3,7 +3,6 @@ import { useAutoRefresh } from "../lib/useAutoRefresh";
 import InfoTip from "../components/InfoTip";
 import TruncateText from "../components/TruncateText";
 import RankArrow from "../components/RankArrow";
-import ErrorCard from "../components/ErrorCard";
 import { PRIZE_CATALOG } from "../lib/prizeCatalog";
 
 const CHIP_KEY_MAP = { wildcard: "wildcard", freehit: "freeHit", "3xc": "tripleCaptain", bboost: "benchBoost" };
@@ -99,7 +98,12 @@ export default function Prizes() {
         <p>Every prize category in the league. Hover the <strong>?</strong> next to a prize name for the exact rule. A LIVE badge only appears when a live match can genuinely still move that prize right now.</p>
       </div>
 
-      {error && <ErrorCard error={error} onRetry={load} label="load prize data" />}
+      {error && (
+        <div className="card error">
+          <p style={{ marginBottom: 10 }}>Couldn't load prize data: {error}</p>
+          <button onClick={load}>Retry</button>
+        </div>
+      )}
 
       {liveMegaGw && (
         <div className="card" style={{ borderColor: "var(--accent-bright)" }}>

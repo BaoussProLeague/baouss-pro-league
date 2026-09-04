@@ -1,18 +1,13 @@
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
-import { isGwFinalizedFromStatus, getLatestStartedGw } from "../../../lib/prizes/liveScores";
+import { isGwFinalizedFromStatus } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
   try {
     const bootstrap = await fpl.bootstrap();
-    // Same fix as everywhere else: is_current/is_next are FPL's own
-    // internal flags and can lag behind reality - the moment a new
-    // gameweek's deadline passes, it should be treated as current for
-    // display purposes even before any of its data exists yet. That's
-    // exactly what getLatestStartedGw checks: has this gameweek's
-    // deadline actually passed, not whether FPL's own flag has caught up.
-    const gw = getLatestStartedGw(bootstrap.events);
+    const currentEvent = bootstrap.events.find((e) => e.is_current) || bootstrap.events.find((e) => e.is_next);
+    const gw = currentEvent ? currentEvent.id : null;
 
     let eventStatusData = null;
     try {

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import PlayerPhoto from "../../components/PlayerPhoto";
-import ErrorCard from "../../components/ErrorCard";
 
 const CHIP_LABELS = { wildcard: "Wildcard", freehit: "Free Hit", bboost: "Bench Boost", "3xc": "Triple Captain" };
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defenders", 3: "Midfielders", 4: "Forwards" };
@@ -120,7 +119,11 @@ export default function TeamView() {
         <p>{data ? `${data.managerName} · GW${data.gw}` : "Loading…"}</p>
       </div>
 
-      {error && <ErrorCard error={error} onRetry={() => load(gw)} label="load this team" />}
+      {error && (
+        <div className="card error">
+          <p>{error}</p>
+        </div>
+      )}
 
       {loading && !error && <div className="card muted">Loading team…</div>}
 

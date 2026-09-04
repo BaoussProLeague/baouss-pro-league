@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import PlayerPhoto from "../../components/PlayerPhoto";
-import ErrorCard from "../../components/ErrorCard";
 
 const TYPE_LABELS = { 1: "Goalkeeper", 2: "Defender", 3: "Midfielder", 4: "Forward" };
 const STATUS_LABELS = { a: null, i: "Injured", d: "Doubtful", s: "Suspended", u: "Unavailable" };
@@ -22,19 +21,16 @@ export default function PlayerDetail() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
 
-  const load = () => {
+  useEffect(() => {
     if (!elementId) return;
-    setError(null);
     fetch(`/api/fpl/player/${elementId}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => (d.error ? setError(d.error) : setData(d)))
       .catch((e) => setError(e.message));
-  };
-
-  useEffect(load, [elementId]);
+  }, [elementId]);
 
   if (error) {
-    return <div className="container"><ErrorCard error={error} onRetry={load} label="load this player" /></div>;
+    return <div className="container"><div className="card error"><p>{error}</p></div></div>;
   }
   if (!data) {
     return <div className="container"><div className="card muted">Loading player…</div></div>;

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import TruncateText from "../components/TruncateText";
 import RankArrow from "../components/RankArrow";
-import ErrorCard from "../components/ErrorCard";
 
 const ROUND_LABELS = { r16: "Round of 16", qf: "Quarter-Final", sf: "Semi-Final", final: "Final" };
 
@@ -73,7 +72,12 @@ export default function H2H() {
         )}
       </div>
 
-      {error && <ErrorCard error={error} onRetry={load} label="load H2H data" />}
+      {error && (
+        <div className="card error">
+          <p style={{ marginBottom: 10 }}>Couldn't load H2H data: {error}</p>
+          <button onClick={load}>Retry</button>
+        </div>
+      )}
 
       {loading && !error && <div className="card muted">Loading H2H standings…</div>}
 
