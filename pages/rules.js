@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ErrorCard from "../components/ErrorCard";
 
 export default function Rules() {
   const [months, setMonths] = useState(null);
@@ -39,12 +40,7 @@ export default function Rules() {
         <p className="muted" style={{ marginBottom: 14 }}>
           A gameweek counts toward the month its deadline falls in. Pulled live from FPL's own schedule - if a fixture gets rearranged for TV, this updates with it.
         </p>
-        {error && (
-          <div>
-            <p className="error" style={{ marginBottom: 10 }}>Couldn't load the live calendar: {error}</p>
-            <button onClick={load}>Retry</button>
-          </div>
-        )}
+        {error && <ErrorCard error={error} onRetry={load} label="load the live calendar" />}
         {!months && !error && <p className="muted">Loading this season's schedule…</p>}
         {months && (
           <div className="table-scroll"><table>

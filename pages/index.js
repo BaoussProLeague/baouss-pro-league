@@ -3,6 +3,7 @@ import { useAutoRefresh } from "../lib/useAutoRefresh";
 import FixtureRow from "../components/FixtureRow";
 import { GwStatusCard, DeadlineCountdownCard } from "../components/GwStatusBar";
 import TruncateText from "../components/TruncateText";
+import ErrorCard from "../components/ErrorCard";
 import RankArrow from "../components/RankArrow";
 
 const CHIP_LABELS = { wildcard: "Wildcards", freehit: "Free Hits", bboost: "Bench Boosts", "3xc": "Triple Captains" };
@@ -72,12 +73,7 @@ export default function Home() {
         <DeadlineCountdownCard />
       </div>
 
-      {error && (
-        <div className="card error">
-          <p style={{ marginBottom: 10 }}>Couldn't load standings: {error}</p>
-          <button onClick={load}>Retry</button>
-        </div>
-      )}
+      {error && <ErrorCard error={error} onRetry={load} label="load standings" />}
 
       {loading && !error && <div className="card muted">Loading standings…</div>}
 

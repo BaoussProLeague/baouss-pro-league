@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAutoRefresh } from "../lib/useAutoRefresh";
 import TruncateText from "../components/TruncateText";
+import ErrorCard from "../components/ErrorCard";
 
 export default function Lms() {
   const [data, setData] = useState(null);
@@ -38,12 +39,7 @@ export default function Lms() {
         <p>A weekly knockout starting GW2 - lowest scorer each gameweek is eliminated until one manager remains. Eliminated on or before GW21? You can buy back in for ₹500 during the GW22-24 break, rejoining when play resumes at GW25.</p>
       </div>
 
-      {error && (
-        <div className="card error">
-          <p style={{ marginBottom: 10 }}>Couldn't load LMS status: {error}</p>
-          <button onClick={load}>Retry</button>
-        </div>
-      )}
+      {error && <ErrorCard error={error} onRetry={load} label="load LMS status" />}
 
       {loading && !error && <div className="card muted">Loading LMS status…</div>}
 
