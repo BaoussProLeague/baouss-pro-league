@@ -60,7 +60,10 @@ export default async function handler(req, res) {
     if (status !== "upcoming") {
       const rawFixtures = await fpl.fixtures(currentGw);
       liveNow = isAnyMatchLive(rawFixtures);
-      const liveScores = getLiveGwScoresFromStandings(entries);
+      // Same fix as everywhere else: event_total can carry over the
+      // previous gameweek's number until a match actually starts.
+      const fixturesStarted = rawFixtures.some((f) => f.started);
+      const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted);
       liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
       const liveBench = await getLiveBenchPointsFromPicks(simpleEntries, currentGw);
       liveBenchMap = new Map(liveBench.map((s) => [s.entry, s]));

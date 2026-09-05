@@ -209,3 +209,17 @@ create table if not exists gw_computation_locks (
   locked_at timestamptz,
   primary key (gw, job_type)
 );
+
+-- =========================================================================
+-- "Last known good" cache for anything that requires a live FPL fetch to
+-- compute (Classic standings, H2H standings, LMS's who's-still-alive
+-- list). When FPL's own servers are briefly down, this is what lets a
+-- page show the last successful snapshot instead of going blank -
+-- clearly marked as stale, not silently passed off as live.
+-- =========================================================================
+create table if not exists fpl_data_cache (
+  cache_key text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+

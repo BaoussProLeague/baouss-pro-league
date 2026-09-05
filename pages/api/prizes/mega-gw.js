@@ -20,7 +20,19 @@ export default async function handler(req, res) {
     const histories = await loadAllHistories(simpleEntries);
     const bootstrap = await fpl.bootstrap();
 
-    res.status(200).json({ megaGws: megaGwResults(megaGws, histories, bootstrap.events, entries) });
+    // Same fix as everywhere else: event_total can carry over the
+    // previous gameweek's number until a match actually starts. Fetched
+    // once per distinct gw across all Mega GW rows, not per row.
+    const distinctGws = [...new Set(megaGws.map((mg) => mg.gw))];
+    const fixturesStartedByGw = new Map();
+    await Promise.all(
+      distinctGws.map(async (gw) => {
+        const fixtures = await fpl.fixtures(gw);
+        fixturesStartedByGw.set(gw, fixtures.some((f) => f.started));
+      })
+    );
+
+    res.status(200).json({ megaGws: megaGwResults(megaGws, histories, bootstrap.events, entries, fixturesStartedByGw) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

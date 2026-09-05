@@ -40,3 +40,13 @@ create table if not exists gw_computation_locks (
   locked_at timestamptz,
   primary key (gw, job_type)
 );
+
+-- New this round: "last known good" cache, used when FPL's own servers
+-- are temporarily down so pages can show the last real snapshot instead
+-- of going blank.
+create table if not exists fpl_data_cache (
+  cache_key text primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+

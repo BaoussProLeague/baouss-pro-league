@@ -1,13 +1,14 @@
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
+import { getLatestStartedGw } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
   try {
     const data = await fpl.bootstrap();
-    const currentEvent = data.events.find((e) => e.is_current) || data.events.find((e) => e.is_next);
+    const currentGw = getLatestStartedGw(data.events);
     res.status(200).json({
-      currentGw: currentEvent ? currentEvent.id : null,
+      currentGw,
       events: data.events.map((e) => ({
         id: e.id,
         name: e.name,

@@ -101,6 +101,9 @@ export function DeadlineCountdownCard() {
           </div>
         ))}
       </div>
+      <p className="muted" style={{ fontSize: 13, marginTop: 14 }}>
+        {new Date(data.nextDeadline).toLocaleDateString(undefined, { day: "numeric", month: "short" })} at {new Date(data.nextDeadline).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} <span style={{ fontSize: 11 }}>(your local time)</span>
+      </p>
     </div>
   );
 }
