@@ -2,6 +2,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { eliminationsThisWeekFor } from "../../../lib/prizes/lms";
 import { withFallbackCache } from "../../../lib/prizes/fallbackCache";
 import { isFplDownError } from "../../../lib/fplErrors";
 
@@ -86,6 +87,14 @@ export default async function handler(req, res) {
         return {
           currentGw,
           gwIsLive: eliminationPending,
+          // The other half of this fix: the frontend used to only know
+          // "the single lowest score," with zero concept of how many
+          // people actually get eliminated this week. Exposing the real
+          // number here (same shared source the elimination engine
+          // itself uses) is what lets the danger highlight correctly
+          // flag the bottom 2 during a 2-elimination week instead of
+          // just 1.
+          eliminationsThisWeek: eliminationPending ? eliminationsThisWeekFor(currentGw) : null,
           stillAliveCount: stillAlive.length,
           stillAlive: sortedStillAlive.map((e) => ({
             entry: e.entry,
@@ -106,7 +115,7 @@ export default async function handler(req, res) {
     }
 
     res.status(200).json({
-      ...(stillAliveResult || { currentGw: null, gwIsLive: false, stillAliveCount: null, stillAlive: [] }),
+      ...(stillAliveResult || { currentGw: null, gwIsLive: false, eliminationsThisWeek: null, stillAliveCount: null, stillAlive: [] }),
       fplUnavailable,
       stale,
       staleSince,

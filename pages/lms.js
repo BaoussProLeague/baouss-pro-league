@@ -72,9 +72,22 @@ export default function Lms() {
                 <tbody>
                   {(() => {
                     const withScores = data.stillAlive.filter((e) => e.currentGwPoints !== null);
-                    const dangerScore = withScores.length > 0 ? Math.min(...withScores.map((e) => e.currentGwPoints)) : null;
+                    const n = data.eliminationsThisWeek || 1;
+                    // The actual fix: this used to only ever flag the
+                    // single lowest score, with zero awareness of how
+                    // many people actually get eliminated this week (2,
+                    // from GW3 onward) - exactly why only 1 person ever
+                    // showed "in danger" during a 2-elimination week.
+                    // Sorting ascending and taking the Nth-lowest score
+                    // as the threshold, then flagging everyone AT OR
+                    // BELOW it, correctly shows all real danger - including
+                    // anyone tied right at the cutoff, rather than
+                    // arbitrarily excluding a tied manager just because
+                    // of list order.
+                    const ascending = [...withScores].sort((a, b) => a.currentGwPoints - b.currentGwPoints);
+                    const dangerThreshold = ascending.length > 0 ? ascending[Math.min(n, ascending.length) - 1].currentGwPoints : null;
                     return data.stillAlive.map((e) => {
-                      const inDanger = dangerScore !== null && e.currentGwPoints === dangerScore;
+                      const inDanger = dangerThreshold !== null && e.currentGwPoints !== null && e.currentGwPoints <= dangerThreshold;
                       return (
                         <tr key={e.entry} style={inDanger ? { color: "var(--danger)" } : undefined}>
                           <td><TruncateText text={e.entryName} maxWidth={200} href={`/team/${e.entry}`} /></td>
