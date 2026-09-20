@@ -119,10 +119,55 @@ export default async function handler(req, res) {
       fplUnavailable,
       stale,
       staleSince,
-      eliminations: eliminations || [],
+      eliminations: await withCurrentScores(eliminations || [], stillAliveResult?.currentGw),
       rebuys: rebuys || [],
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+}
+
+// The actual fix, not a one-off correction: FPL's own "confirmed" signal
+// isn't a literal guarantee nothing will ever change again - a rare late
+// stat correction can still land even after that (proven directly: El
+// Pistolero's stored elimination score of 47 vs. their real 48, days
+// after the gameweek supposedly finalized). Rather than trust a frozen
+// snapshot forever and need a manual fix every time this happens, this
+// re-checks the TRUE current score for anyone eliminated recently -
+// where a late correction is still realistically possible - and shows
+// that instead. Anything eliminated further back is trusted as-is:
+// FPL doesn't reach back and revise gameweeks from many weeks ago, and
+// re-fetching the entire season's worth of eliminations on every page
+// load would be real, unnecessary cost for no real benefit.
+const RECHECK_WINDOW_GWS = 3;
+
+async function withCurrentScores(eliminations, currentGw) {
+  if (eliminations.length === 0 || !currentGw) return eliminations;
+
+  const recentCutoff = currentGw - RECHECK_WINDOW_GWS;
+  const recent = eliminations.filter((e) => e.gw_eliminated >= recentCutoff);
+  if (recent.length === 0) return eliminations;
+
+  const currentScores = await Promise.all(
+    recent.map(async (e) => {
+      try {
+        const h = await fpl.entryHistory(e.entry_id);
+        const row = h.current.find((r) => r.event === e.gw_eliminated);
+        return { entry_id: e.entry_id, gw_eliminated: e.gw_eliminated, points: row ? row.points : null };
+      } catch {
+        return null; // falls back to the stored value below
+      }
+    })
+  );
+  const currentByKey = new Map(
+    currentScores.filter(Boolean).map((s) => [`${s.entry_id}-${s.gw_eliminated}`, s.points])
+  );
+
+  return eliminations.map((e) => {
+    const current = currentByKey.get(`${e.entry_id}-${e.gw_eliminated}`);
+    return {
+      ...e,
+      current_score: current !== undefined && current !== null ? current : e.gw_score,
+    };
+  });
 }
