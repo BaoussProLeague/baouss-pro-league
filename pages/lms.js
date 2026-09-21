@@ -121,14 +121,7 @@ export default function Lms() {
                     <tr key={e.entry_id}>
                       <td>{e.gw_eliminated}</td>
                       <td><TruncateText text={e.entry_name} maxWidth={160} href={`/team/${e.entry_id}`} /></td>
-                      <td>
-                        {e.score_at_decision ?? e.gw_score}
-                        {e.corrected_score != null && (
-                          <div style={{ fontSize: 11, color: "var(--accent-bright)", marginTop: 2 }}>
-                            FPL now shows {e.corrected_score} for this GW
-                          </div>
-                        )}
-                      </td>
+                      <td>{e.score_at_decision ?? e.gw_score}</td>
                       <td style={{ fontSize: 12.5, color: "var(--muted)" }}><TruncateText text={tieLabel} maxWidth={220} /></td>
                       <td>{eligible ? "Yes" : "No"}</td>
                       <td>{rebuy && rebuy.paid ? "Yes (₹500 paid)" : "—"}</td>
