@@ -165,9 +165,20 @@ async function withCurrentScores(eliminations, currentGw) {
 
   return eliminations.map((e) => {
     const current = currentByKey.get(`${e.entry_id}-${e.gw_eliminated}`);
+    // The actual fix: last time, this silently REPLACED the displayed
+    // score with whatever FPL currently reports - which meant a decision
+    // that was entirely correct at the moment it was made (using
+    // whatever score FPL had confirmed at the time) could later look
+    // bizarre and unexplained if FPL's data shifted afterward, with zero
+    // indication anything had changed. That's exactly what caused the
+    // confusion here. Now both values are kept, clearly separate: what
+    // the decision was actually based on stays untouched, and a
+    // corrected value only ever appears as a distinctly-flagged note.
+    const hasCorrection = current !== undefined && current !== null && current !== e.gw_score;
     return {
       ...e,
-      current_score: current !== undefined && current !== null ? current : e.gw_score,
+      score_at_decision: e.gw_score,
+      corrected_score: hasCorrection ? current : null,
     };
   });
 }
