@@ -1,6 +1,6 @@
 import { fpl } from "../../../lib/fpl";
 import { supabaseAdmin } from "../../../lib/supabase";
-import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 import { isFplDownError } from "../../../lib/fplErrors";
 
@@ -89,7 +89,8 @@ export default async function handler(req, res) {
           // of showing stale numbers.
           const gwFixtures = await fpl.fixtures(displayGw);
           const fixturesStarted = gwFixtures.some((f) => f.started);
-          const liveScores = getLiveGwScoresFromStandings(classicEntries, fixturesStarted);
+          const hitCosts = fixturesStarted ? await getLiveHitCostsFromPicks(classicEntries, displayGw) : null;
+          const liveScores = getLiveGwScoresFromStandings(classicEntries, fixturesStarted, hitCosts);
           scoreById = new Map(liveScores.map((s) => [s.entry, s.points]));
         } else if (displayGw < currentGw) {
           // A genuinely past gameweek - history is fully reliable here,
@@ -106,7 +107,9 @@ export default async function handler(req, res) {
               try {
                 const h = await fpl.entryHistory(entryId);
                 const row = h.current.find((r) => r.event === displayGw);
-                return { entryId, points: row ? row.points : null };
+                // Same gross-vs-net fix, applied here directly.
+                const netPoints = row ? row.points - (row.event_transfers_cost || 0) : null;
+                return { entryId, points: netPoints };
               } catch {
                 return { entryId, points: null };
               }

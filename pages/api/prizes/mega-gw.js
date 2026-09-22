@@ -3,6 +3,7 @@ import { fpl } from "../../../lib/fpl";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { megaGwResults } from "../../../lib/prizes/megaGw";
 import { setNoCache } from "../../../lib/noCacheHeaders";
+import { gwStatus, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 
 export default async function handler(req, res) {
   setNoCache(res);
@@ -25,14 +26,22 @@ export default async function handler(req, res) {
     // once per distinct gw across all Mega GW rows, not per row.
     const distinctGws = [...new Set(megaGws.map((mg) => mg.gw))];
     const fixturesStartedByGw = new Map();
+    const hitCostsByGw = new Map();
     await Promise.all(
       distinctGws.map(async (gw) => {
         const fixtures = await fpl.fixtures(gw);
         fixturesStartedByGw.set(gw, fixtures.some((f) => f.started));
+        const event = bootstrap.events.find((e) => e.id === gw);
+        // Only worth fetching hit costs for a genuinely live gameweek -
+        // a completed one reads from history, which is already
+        // corrected at the source.
+        if (gwStatus(event) === "live") {
+          hitCostsByGw.set(gw, await getLiveHitCostsFromPicks(entries, gw));
+        }
       })
     );
 
-    res.status(200).json({ megaGws: megaGwResults(megaGws, histories, bootstrap.events, entries, fixturesStartedByGw) });
+    res.status(200).json({ megaGws: megaGwResults(megaGws, histories, bootstrap.events, entries, fixturesStartedByGw, hitCostsByGw) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

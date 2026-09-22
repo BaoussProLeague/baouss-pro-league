@@ -2,7 +2,7 @@ import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 import { loadAllHistories, managerOfTheMonth } from "../../../lib/prizes/fromHistory";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, gwStatus, getLatestStartedGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getLatestStartedGw, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 import { withFallbackCache } from "../../../lib/prizes/fallbackCache";
 import { isFplDownError } from "../../../lib/fplErrors";
 
@@ -45,7 +45,8 @@ export default async function handler(req, res) {
           // previous gameweek's number until a match actually starts.
           const gwFixtures = currentGw ? await fpl.fixtures(currentGw) : [];
           const fixturesStarted = gwFixtures.some((f) => f.started);
-          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted);
+          const hitCosts = fixturesStarted ? await getLiveHitCostsFromPicks(simpleEntries, currentGw) : null;
+          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted, hitCosts);
           liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
         }
 

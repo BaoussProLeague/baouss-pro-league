@@ -3,7 +3,7 @@ import { supabaseAdmin } from "../../../lib/supabase";
 import { loadAllHistories } from "../../../lib/prizes/fromHistory";
 import { computeCustomH2hStandings } from "../../../lib/prizes/customH2h";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
-import { getLiveGwScoresFromStandings, gwStatus, isGwFinalizedFromStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, isGwFinalizedFromStatus, getEffectiveCurrentGw, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 import { withFallbackCache } from "../../../lib/prizes/fallbackCache";
 import { isFplDownError } from "../../../lib/fplErrors";
 import { setNoCache } from "../../../lib/noCacheHeaders";
@@ -91,7 +91,8 @@ export default async function handler(req, res) {
           // previous gameweek's number until a match actually starts.
           const rawFixturesForGw = await fpl.fixtures(currentGw);
           const fixturesStarted = rawFixturesForGw.some((f) => f.started);
-          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted);
+          const hitCosts = fixturesStarted ? await getLiveHitCostsFromPicks(entries, currentGw) : null;
+          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted, hitCosts);
           liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
         }
 

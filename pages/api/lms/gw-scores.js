@@ -57,10 +57,12 @@ export default async function handler(req, res) {
         try {
           const h = await fpl.entryHistory(m.entry);
           const row = h.current.find((r) => r.event === gw);
+          // Same gross-vs-net fix, applied here directly.
+          const netPoints = row ? row.points - (row.event_transfers_cost || 0) : null;
           return {
             entry: m.entry,
             entryName: m.entryName,
-            points: row ? row.points : null,
+            points: netPoints,
             eliminatedThisGw: eliminatedThisGwIds.has(m.entry),
           };
         } catch {

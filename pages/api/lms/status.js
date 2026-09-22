@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "../../../lib/supabase";
 import { fpl } from "../../../lib/fpl";
 import { setNoCache } from "../../../lib/noCacheHeaders";
-import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, gwStatus, getEffectiveCurrentGw, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 import { eliminationsThisWeekFor } from "../../../lib/prizes/lms";
 import { withFallbackCache } from "../../../lib/prizes/fallbackCache";
 import { isFplDownError } from "../../../lib/fplErrors";
@@ -68,7 +68,8 @@ export default async function handler(req, res) {
 
         let livePointsByEntry = new Map();
         if (eliminationPending) {
-          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted);
+          const hitCosts = await getLiveHitCostsFromPicks(entries, currentGw);
+          const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted, hitCosts);
           livePointsByEntry = new Map(liveScores.map((s) => [s.entry, s.points]));
         }
 
@@ -153,7 +154,10 @@ async function withCurrentScores(eliminations, currentGw) {
       try {
         const h = await fpl.entryHistory(e.entry_id);
         const row = h.current.find((r) => r.event === e.gw_eliminated);
-        return { entry_id: e.entry_id, gw_eliminated: e.gw_eliminated, points: row ? row.points : null };
+        // Same gross-vs-net fix, applied here directly since this reads
+        // entryHistory itself rather than through loadAllHistories.
+        const netPoints = row ? row.points - (row.event_transfers_cost || 0) : null;
+        return { entry_id: e.entry_id, gw_eliminated: e.gw_eliminated, points: netPoints };
       } catch {
         return null; // falls back to the stored value below
       }

@@ -93,13 +93,25 @@ export default async function handler(req, res) {
       startingXI.reduce((sum, p) => sum + p.livePoints, 0) +
       (benchBoostActive ? bench.reduce((sum, p) => sum + p.livePoints, 0) : 0);
 
+    // The confirmed bug, same fix applied here: entry_history.points is
+    // gross (hit not deducted) for a finalized gameweek, and the same
+    // applies to a live one - the hit itself is known immediately at
+    // deadline from entry_history.event_transfers_cost, well before any
+    // match has been played, so it's always available here regardless
+    // of whether the gameweek is live or finished.
+    const transfersMade = picksData.entry_history?.event_transfers ?? 0;
+    const transferCost = picksData.entry_history?.event_transfers_cost ?? 0;
+
     res.status(200).json({
       gw: requestedGw,
       latestLockedGw,
       managerName: `${entry.player_first_name || ""} ${entry.player_last_name || ""}`.trim(),
       teamName: entry.name,
       chip,
-      totalLivePoints,
+      transfersMade,
+      transferCost,
+      totalLivePoints: totalLivePoints - transferCost,
+      grossLivePoints: totalLivePoints,
       startingXI,
       bench,
     });

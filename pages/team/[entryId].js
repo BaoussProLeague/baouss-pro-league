@@ -133,6 +133,11 @@ export default function TeamView() {
                 {data.totalLivePoints} pts
                 {data.chip && <span className="pill admin" style={{ marginLeft: 10, fontSize: 12 }}>{CHIP_LABELS[data.chip] || data.chip}</span>}
               </div>
+              {data.transferCost > 0 && (
+                <div className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>
+                  {data.transfersMade} transfer{data.transfersMade !== 1 ? "s" : ""} this GW · -{data.transferCost} pt hit (already included above)
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input

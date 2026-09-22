@@ -5,7 +5,7 @@ import {
 } from "../../../lib/prizes/fromHistory";
 import { chipPrizes } from "../../../lib/prizes/chips";
 import { buildMonthGwMap } from "../../../lib/monthCalendar";
-import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getLatestStartedGw, isGwFinalizedFromStatus } from "../../../lib/prizes/liveScores";
+import { getLiveGwScoresFromStandings, getLiveBenchPointsFromPicks, gwStatus, isAnyMatchLive, getLatestStartedGw, isGwFinalizedFromStatus, getLiveHitCostsFromPicks } from "../../../lib/prizes/liveScores";
 import { computeRankDeltas } from "../../../lib/prizes/rankDelta";
 import { setNoCache } from "../../../lib/noCacheHeaders";
 
@@ -63,7 +63,8 @@ export default async function handler(req, res) {
       // Same fix as everywhere else: event_total can carry over the
       // previous gameweek's number until a match actually starts.
       const fixturesStarted = rawFixtures.some((f) => f.started);
-      const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted);
+      const hitCosts = fixturesStarted ? await getLiveHitCostsFromPicks(simpleEntries, currentGw) : null;
+      const liveScores = getLiveGwScoresFromStandings(entries, fixturesStarted, hitCosts);
       liveScoresMap = new Map(liveScores.map((s) => [s.entry, s]));
       const liveBench = await getLiveBenchPointsFromPicks(simpleEntries, currentGw);
       liveBenchMap = new Map(liveBench.map((s) => [s.entry, s]));
