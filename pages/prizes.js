@@ -84,8 +84,8 @@ export default function Prizes() {
     if (key === "motm" && data.currentMonth && data.motm[data.currentMonth]) {
       return data.motm[data.currentMonth].map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.points} pts` }));
     }
-    if (key === "rankJumpMonth" && data.currentMonth && data.rankJumpByMonth[data.currentMonth]) {
-      return data.rankJumpByMonth[data.currentMonth].map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.jump >= 0 ? "+" : ""}${r.jump} places` }));
+    if (key === "rankJumpMonth" && data.currentMonthRankJumpLeader) {
+      return [{ entry: data.currentMonthRankJumpLeader.winner.entry, entryName: data.currentMonthRankJumpLeader.winner.entryName, display: `${data.currentMonthRankJumpLeader.jump} places` }];
     }
     return null;
   };
