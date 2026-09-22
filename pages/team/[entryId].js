@@ -50,14 +50,24 @@ function PlayerCard({ p }) {
         textDecoration: "none",
       }}
     >
-      <div style={{ marginBottom: 4 }}>
+      <div style={{ marginBottom: 4, position: "relative" }}>
         <Crest code={p.teamCode} />
+        {(p.isCaptain || p.isViceCaptain) && (
+          <span style={{
+            position: "absolute", top: -4, right: -4,
+            background: p.isCaptain ? "var(--accent-bright)" : "var(--muted)",
+            color: "var(--bg)", fontSize: 9, fontWeight: 800,
+            borderRadius: "50%", width: 16, height: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            lineHeight: 1,
+          }}>
+            {p.isCaptain ? "C" : "V"}
+          </span>
+        )}
       </div>
       <PlayerPhoto photoCode={p.photoCode} name={p.name} />
       <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {p.name}
-        {p.isCaptain && <span style={{ color: "var(--accent-bright)" }}> (C)</span>}
-        {p.isViceCaptain && <span style={{ color: "var(--muted)" }}> (VC)</span>}
       </div>
       <div style={{
         fontSize: p.fixture && !p.fixture.started ? 11 : 15,

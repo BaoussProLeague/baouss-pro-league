@@ -170,6 +170,24 @@ export default function Prizes() {
         </div>
       )}
 
+      {data && data.rankJumpCompletedMonths && data.rankJumpCompletedMonths.length > 0 && (
+        <div className="card">
+          <h2>Highest Rank Jump per Month</h2>
+          <div className="table-scroll"><table>
+            <thead><tr><th>Month</th><th>Winner</th><th>Rank Jump</th></tr></thead>
+            <tbody>
+              {data.rankJumpCompletedMonths.map((m) => (
+                <tr key={m.month}>
+                  <td>{m.month}</td>
+                  <td><TruncateText text={m.winner.entryName} maxWidth={180} href={`/team/${m.winner.entry}`} /></td>
+                  <td>{m.winner.jump} positions</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        </div>
+      )}
+
       <div className="grid">
         {PRIZE_CATALOG.filter((p) => p.key !== "classic" && p.key !== "lms" && p.key !== "h2h" && p.key !== "megaGw" && p.key !== "motm").map((prize) => {
           const rows = rowsFor(prize.key);

@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     const topHalfCutoff = Math.ceil(entries.length / 2);
 
     const motmByMonth = managerOfTheMonth(histories, monthGwMap, status !== "upcoming" ? currentGw : null, liveScoresMap);
-    const rankJumpByMonthResult = rankJumpByMonth(histories, monthGwMap, bootstrap.events, status !== "upcoming" ? currentGw : null, liveScoresMap, eventStatusData);
+    const rankJumpResult = rankJumpByMonth(histories, monthGwMap, bootstrap.events, status !== "upcoming" ? currentGw : null, liveScoresMap, eventStatusData);
 
     // Current month's leaders, for a quick "who's leading right now" view
     const monthEntries = Object.entries(monthGwMap).sort(([, a], [, b]) => Math.min(...a) - Math.min(...b));
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
       .filter(([, gws]) => isMonthComplete(gws))
       .map(([month, gws]) => {
         const leaderboard = motmByMonth[month] || [];
-        return { month, winner: leaderboard[0] || null };
+        return { month, winner: leaderboard[0] || null, points: leaderboard[0]?.totalPoints || 0 };
       })
       .filter((m) => m.winner);
     const currentMonthIsComplete = currentMonthEntry ? isMonthComplete(currentMonthEntry[1]) : false;
@@ -121,7 +121,8 @@ export default async function handler(req, res) {
       leastTransferCost: leastTransferCostNow,
       comebackKing: currentGw > 19 ? comebackKing(histories, currentGw, topHalfCutoff, status !== "upcoming" ? currentGw : null, liveScoresMap) : [],
       motm: motmByMonth,
-      rankJumpByMonth: rankJumpByMonthResult,
+      rankJumpCompletedMonths: rankJumpResult.rankJumpCompletedMonths,
+      currentMonthRankJumpLeader: rankJumpResult.currentMonthRankJumpLeader,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,
       rankJumpIsFirstMonth,
       motmCompletedMonths,
