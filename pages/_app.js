@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import "../styles/globals.css";
 import Nav from "../components/Nav";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function App({ Component, pageProps }) {
   // Trigger-on-visit automation: a quiet, fire-and-forget ping on every
@@ -19,6 +20,7 @@ export default function App({ Component, pageProps }) {
     <>
       <Nav />
       <Component {...pageProps} />
+      <Analytics />
     </>
   );
 }
