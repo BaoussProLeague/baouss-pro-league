@@ -69,6 +69,18 @@ export default function PlayerDetail() {
         <div className="stat"><div className="label">Selected by</div><div className="value">{data.selectedByPercent}%</div></div>
       </div>
 
+      {data.leagueOwnership && (
+        <div className="card">
+          <h2>In our league · GW{data.leagueOwnership.gw}</h2>
+          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
+            <div className="stat"><div className="label">Selected by</div><div className="value" style={{ fontSize: 18 }}>{data.leagueOwnership.selectedBy} of {data.leagueOwnership.managersCounted}</div></div>
+            <div className="stat"><div className="label">Captained by</div><div className="value" style={{ fontSize: 18 }}>{data.leagueOwnership.captainedBy} of {data.leagueOwnership.managersCounted}</div></div>
+          </div>
+          {data.leagueOwnership.managersCounted < data.leagueOwnership.managersTotal && (
+            <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>Based on {data.leagueOwnership.managersCounted} of {data.leagueOwnership.managersTotal} managers.</p>
+          )}
+        </div>
+      )}
       <div className="card">
         <h2>Season stats</h2>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>

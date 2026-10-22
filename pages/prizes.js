@@ -84,8 +84,12 @@ export default function Prizes() {
     if (key === "motm" && data.currentMonth && data.motm[data.currentMonth]) {
       return data.motm[data.currentMonth].map((r) => ({ entry: r.entry, entryName: r.entryName, display: `${r.points} pts` }));
     }
-    if (key === "rankJumpMonth" && data.currentMonthRankJumpLeader) {
-      return [{ entry: data.currentMonthRankJumpLeader.winner.entry, entryName: data.currentMonthRankJumpLeader.winner.entryName, display: `${data.currentMonthRankJumpLeader.jump} places` }];
+    if (key === "rankJumpMonth" && data.currentMonthRankJumpTable) {
+      return data.currentMonthRankJumpTable.rows.map((r) => ({
+        entry: r.entry,
+        entryName: r.entryName,
+        display: `+${r.jump} (#${r.startRank} → #${r.endRank})`,
+      }));
     }
     return null;
   };
@@ -202,10 +206,13 @@ export default function Prizes() {
                 {live && <span className="pill alive">LIVE</span>}
               </div>
 
+              {prize.key === "rankJumpMonth" && data?.currentMonth && (
+                <p className="muted" style={{ fontSize: 12, marginTop: -6, marginBottom: 8 }}>{data.currentMonth} · live · resets each month</p>
+              )}
               {rows && rows.length > 0 ? (
                 <div className="table-scroll"><table>
                   <tbody>
-                    {rows.slice(0, 5).map((row, i) => (
+                    {rows.slice(0, prize.key === "rankJumpMonth" ? 10 : 5).map((row, i) => (
                       <tr key={row.entry}>
                         <td>{i + 1}. <TruncateText text={row.entryName} maxWidth={150} href={row.gw ? `/team/${row.entry}?gw=${row.gw}` : `/team/${row.entry}`} /><RankArrow delta={row.delta} /></td>
                         <td style={{ textAlign: "right" }}>{row.display}</td>

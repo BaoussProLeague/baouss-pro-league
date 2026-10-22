@@ -1,5 +1,7 @@
 import { fpl } from "../../../../lib/fpl";
 import { setNoCache } from "../../../../lib/noCacheHeaders";
+import { getLatestStartedGw } from "../../../../lib/prizes/liveScores";
+import { getLeagueOwnershipSnapshot } from "../../../../lib/prizes/leagueOwnership";
 
 export default async function handler(req, res) {
   setNoCache(res);
@@ -15,6 +17,29 @@ export default async function handler(req, res) {
     const teamsById = new Map(bootstrap.teams.map((t) => [t.id, t]));
 
     const summary = await fpl.elementSummary(elementId);
+
+    // League-only ownership for the latest started GW. Soft-fail: if the
+    // snapshot can't be built (FPL down, timeout), the rest of the player
+    // page still loads and this card just doesn't show.
+    let leagueOwnership = null;
+    let leagueOwnershipError = null;
+    try {
+      const latestGw = getLatestStartedGw(bootstrap.events);
+      if (latestGw) {
+        const snap = await getLeagueOwnershipSnapshot(latestGw);
+        if (snap) {
+          leagueOwnership = {
+            gw: snap.gw,
+            managersCounted: snap.managersCounted,
+            managersTotal: snap.managersTotal,
+            selectedBy: snap.selectedBy[el.id] || 0,
+            captainedBy: snap.captainedBy[el.id] || 0,
+          };
+        }
+      }
+    } catch (err) {
+      leagueOwnershipError = err.message;
+    }
 
     res.status(200).json({
       id: el.id,
@@ -42,6 +67,8 @@ export default async function handler(req, res) {
       minutes: el.minutes,
       status: el.status, // 'a' available, 'i' injured, 'd' doubtful, 's' suspended, 'u' unavailable
       news: el.news,
+      leagueOwnership,
+      leagueOwnershipError,
       history: summary.history.map((h) => ({
         gw: h.round,
         points: h.total_points,

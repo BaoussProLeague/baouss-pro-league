@@ -121,8 +121,14 @@ export default async function handler(req, res) {
       leastTransferCost: leastTransferCostNow,
       comebackKing: currentGw > 19 ? comebackKing(histories, currentGw, topHalfCutoff, status !== "upcoming" ? currentGw : null, liveScoresMap) : [],
       motm: motmByMonth,
-      rankJumpCompletedMonths: rankJumpResult.rankJumpCompletedMonths,
+      // Only finished months go into the past-winners table - the
+      // in-progress month belongs in the live table, not here.
+      rankJumpCompletedMonths: rankJumpResult.rankJumpCompletedMonths.filter((m) => {
+        const entry = monthEntries.find(([k]) => k === m.month);
+        return entry && isMonthComplete(entry[1]);
+      }),
       currentMonthRankJumpLeader: rankJumpResult.currentMonthRankJumpLeader,
+      currentMonthRankJumpTable: rankJumpResult.currentMonthRankJumpTable,
       currentMonth: currentMonthEntry ? currentMonthEntry[0] : null,
       rankJumpIsFirstMonth,
       motmCompletedMonths,
