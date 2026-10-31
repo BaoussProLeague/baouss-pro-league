@@ -88,7 +88,12 @@ export default function Prizes() {
       return data.currentMonthRankJumpTable.rows.map((r) => ({
         entry: r.entry,
         entryName: r.entryName,
-        display: `+${r.jump} (#${r.startRank} → #${r.endRank})`,
+        display: (
+          <span>
+            {r.jump}
+            <span style={{ color: "var(--success)", fontSize: 11, marginLeft: 4 }}>▲</span>
+          </span>
+        ),
       }));
     }
     return null;
