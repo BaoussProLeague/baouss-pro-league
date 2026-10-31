@@ -207,7 +207,7 @@ export default function Prizes() {
               </div>
 
               {prize.key === "rankJumpMonth" && data?.currentMonth && (
-                <p className="muted" style={{ fontSize: 12, marginTop: -6, marginBottom: 8 }}>{data.currentMonth} · live · resets each month</p>
+                <p className="muted" style={{ fontSize: 12, marginTop: -6, marginBottom: 8 }}>{data.currentMonth} · through GW{data.currentMonthRankJumpTable?.throughGw ?? "-"}{data.currentMonthRankJumpTable?.provisional ? " · provisional until FPL confirms" : " · confirmed"} · resets each month</p>
               )}
               {rows && rows.length > 0 ? (
                 <div className="table-scroll"><table>
@@ -224,6 +224,10 @@ export default function Prizes() {
                 <p className="muted">
                   {prize.key === "rankJumpMonth" && data?.rankJumpIsFirstMonth
                     ? "This will start from next month - this month's rankings will be the baseline to calculate the jump."
+                    : prize.key === "rankJumpMonth" && data?.currentMonthRankJumpTable
+                    ? "Nobody has moved up in the rankings yet this month - the race is live and will update after each gameweek."
+                    : prize.key === "rankJumpMonth"
+                    ? "No race data yet for this month - the race uses the previous month's final standings as its starting point."
                     : "No data yet this season - check back once the relevant gameweeks have been played."}
                 </p>
               )}
